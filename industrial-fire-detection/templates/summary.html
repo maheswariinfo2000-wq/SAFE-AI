@@ -1,0 +1,2034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>System Summary — Fire Detection</title>
+
+    <style>
+
+        /* =========================================================
+           BASE
+           ========================================================= */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+
+            background:
+                radial-gradient(
+                    circle at 85% 75%,
+                    rgba(0, 82, 150, 0.09),
+                    transparent 30%
+                ),
+                #0f1419;
+
+            color: #fff;
+            padding: 30px;
+            min-height: 100vh;
+
+            overflow-x: hidden;
+        }
+
+        .back-link {
+            color: #ff6b4a;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-link:hover {
+            color: #ff947b;
+        }
+
+
+        /* =========================================================
+           SYSTEM SUMMARY TITLE
+           ========================================================= */
+
+        .tg-page-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 16px;
+        }
+
+        .tg-title-icon {
+            width: 58px;
+            height: 58px;
+
+            flex-shrink: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 16px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(10, 130, 255, .20),
+                    rgba(8, 40, 70, .12)
+                );
+
+            border: 1px solid rgba(30, 154, 255, .35);
+
+            color: #129cff;
+
+            box-shadow:
+                0 0 20px rgba(20, 140, 255, .16),
+                inset 0 0 14px rgba(20, 140, 255, .06);
+
+            perspective: 500px;
+
+            animation:
+                tgTitle3D 4.5s ease-in-out infinite;
+        }
+
+        .tg-title-icon svg {
+            width: 44px;
+            height: 44px;
+
+            filter:
+                drop-shadow(0 0 5px rgba(0, 161, 255, .95));
+        }
+
+        h1 {
+            margin: 0 0 6px;
+            font-size: 1.8rem;
+        }
+
+        .subtitle {
+            color: #aeb8c0;
+            margin-bottom: 30px;
+            font-size: .95rem;
+        }
+
+
+        /* =========================================================
+           STAT GRID
+           ========================================================= */
+
+        .grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, minmax(190px, 1fr));
+
+            gap: 16px;
+
+            max-width: 1000px;
+
+            margin-bottom: 30px;
+
+            perspective: 1400px;
+        }
+
+
+        /* =========================================================
+           CARD
+           ========================================================= */
+
+        .card {
+            position: relative;
+
+            min-height: 105px;
+
+            padding: 16px 18px;
+
+            display: flex;
+            align-items: center;
+
+            gap: 13px;
+
+            border-radius: 13px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(27, 39, 51, .98),
+                    rgba(17, 29, 40, .96)
+                );
+
+            border-left: 4px solid #ff6b4a;
+
+            overflow: hidden;
+
+            transform-style: preserve-3d;
+
+            box-shadow:
+                0 10px 25px rgba(0, 0, 0, .20),
+                inset 0 1px 0 rgba(255,255,255,.025);
+
+            transition:
+                transform .35s cubic-bezier(.2,.8,.2,1),
+                box-shadow .35s ease,
+                filter .35s ease,
+                opacity .35s ease;
+        }
+
+        .card::before {
+            content: "";
+
+            position: absolute;
+
+            inset: 0;
+
+            pointer-events: none;
+
+            background:
+                linear-gradient(
+                    115deg,
+                    transparent 20%,
+                    rgba(255,255,255,.025) 50%,
+                    transparent 80%
+                );
+
+            transform:
+                translateZ(1px);
+        }
+
+        .card::after {
+            content: "";
+
+            position: absolute;
+
+            width: 100px;
+            height: 100px;
+
+            right: -45px;
+            bottom: -45px;
+
+            border-radius: 50%;
+
+            background: currentColor;
+
+            opacity: .06;
+
+            filter: blur(10px);
+
+            pointer-events: none;
+        }
+
+
+        /* =========================================================
+           3D CARD HOVER / TOUCH
+           ========================================================= */
+
+        .grid .card:hover {
+            transform:
+                translateY(-8px)
+                translateZ(35px)
+                rotateX(3deg)
+                rotateY(-2deg)
+                scale(1.12);
+
+            z-index: 100;
+
+            box-shadow:
+                0 24px 50px rgba(0,0,0,.48),
+                0 0 28px rgba(40,160,255,.14);
+
+            filter: brightness(1.08);
+        }
+
+
+        /* Other cards slightly move back when one is hovered */
+
+        .grid:has(.card:hover) .card:not(:hover) {
+            transform:
+                scale(.96)
+                translateZ(-10px);
+
+            opacity: .78;
+        }
+
+
+        /* Touch / press */
+
+        .grid .card:active {
+            transform:
+                translateY(-5px)
+                translateZ(25px)
+                rotateX(2deg)
+                scale(1.08);
+
+            z-index: 100;
+
+            box-shadow:
+                0 20px 42px rgba(0,0,0,.45),
+                0 0 24px rgba(40,160,255,.12);
+        }
+
+
+        /* =========================================================
+           3D ICON AREA
+           ========================================================= */
+
+        .tg-card-icon-wrap {
+            width: 52px;
+            height: 52px;
+
+            min-width: 52px;
+
+            position: relative;
+
+            perspective: 500px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            transform-style: preserve-3d;
+        }
+
+
+        .tg-card-icon {
+            width: 50px;
+            height: 50px;
+
+            border-radius: 50%;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 22px;
+
+            background:
+                radial-gradient(
+                    circle at 35% 30%,
+                    rgba(255,255,255,.15),
+                    rgba(255,255,255,.035) 58%,
+                    rgba(0,0,0,.15)
+                );
+
+            border: 1px solid rgba(255,255,255,.09);
+
+            transform-style: preserve-3d;
+
+            box-shadow:
+                inset 0 0 15px rgba(255,255,255,.035),
+                0 0 13px rgba(0,0,0,.16);
+
+            animation:
+                tgIcon3DRotation 6s linear infinite;
+
+            transition:
+                transform .45s ease,
+                box-shadow .35s ease;
+        }
+
+
+        .tg-card-icon::after {
+            content: "";
+
+            position: absolute;
+
+            width: 100%;
+            height: 100%;
+
+            border-radius: 50%;
+
+            border:
+                1px solid rgba(255,255,255,.10);
+
+            transform:
+                translateZ(-8px)
+                scale(.84);
+
+            opacity: .65;
+        }
+
+
+        /* Icon grows more when card is selected */
+
+        .grid .card:hover .tg-card-icon {
+            transform:
+                rotateX(10deg)
+                rotateY(360deg)
+                scale(1.18);
+
+            box-shadow:
+                0 0 22px currentColor;
+        }
+
+
+        .grid .card:active .tg-card-icon {
+            transform:
+                rotateY(180deg)
+                scale(1.12);
+        }
+
+
+        /* =========================================================
+           ICON COLORS
+           ========================================================= */
+
+        .card.hotspot {
+            border-left-color: #ff6b4a;
+            color: #ff6b4a;
+        }
+
+        .card.hotspot .tg-card-icon {
+            background:
+                radial-gradient(
+                    circle at 35% 30%,
+                    rgba(255,110,85,.45),
+                    rgba(255,60,40,.10) 60%,
+                    rgba(0,0,0,.1)
+                );
+
+            border-color:
+                rgba(255,90,65,.45);
+
+            box-shadow:
+                inset 0 0 15px rgba(255,80,50,.12),
+                0 0 14px rgba(255,65,40,.18);
+        }
+
+
+        .card.anomaly {
+            border-left-color: #ff1744;
+            color: #ff1744;
+        }
+
+        .card.anomaly .value {
+            color: #ff1744;
+        }
+
+        .card.anomaly .tg-card-icon {
+            background:
+                radial-gradient(
+                    circle at 35% 30%,
+                    rgba(255,62,98,.42),
+                    rgba(255,20,68,.09) 60%,
+                    rgba(0,0,0,.1)
+                );
+
+            border-color:
+                rgba(255,23,68,.45);
+
+            box-shadow:
+                0 0 16px rgba(255,23,68,.18);
+        }
+
+
+        .card.ml {
+            border-left-color: #4fc3f7;
+            color: #4fc3f7;
+        }
+
+        .card.ml .value {
+            color: #4fc3f7;
+        }
+
+        .card.ml .tg-card-icon {
+            background:
+                radial-gradient(
+                    circle at 35% 30%,
+                    rgba(85,210,255,.40),
+                    rgba(50,150,255,.08) 60%,
+                    rgba(0,0,0,.1)
+                );
+
+            border-color:
+                rgba(79,195,247,.45);
+
+            box-shadow:
+                0 0 16px rgba(79,195,247,.17);
+        }
+
+
+        .card.green {
+            border-left-color: #4caf50;
+            color: #4caf50;
+        }
+
+        .card.green .value {
+            color: #4caf50;
+        }
+
+        .card.green .tg-card-icon {
+            background:
+                radial-gradient(
+                    circle at 35% 30%,
+                    rgba(90,220,100,.42),
+                    rgba(76,175,80,.08) 60%,
+                    rgba(0,0,0,.1)
+                );
+
+            border-color:
+                rgba(76,175,80,.42);
+
+            box-shadow:
+                0 0 15px rgba(76,175,80,.16);
+        }
+
+
+        /* =========================================================
+           CARD CONTENT
+           ========================================================= */
+
+        .tg-card-content {
+            position: relative;
+            z-index: 3;
+
+            transform:
+                translateZ(18px);
+
+            transition:
+                transform .35s ease;
+        }
+
+        .grid .card:hover .tg-card-content {
+            transform:
+                translateZ(30px);
+        }
+
+        .card .label {
+            color: #aeb8c0;
+
+            font-size: .78rem;
+
+            margin-bottom: 6px;
+
+            line-height: 1.25;
+        }
+
+        .card .value {
+            font-size: 1.8rem;
+            font-weight: bold;
+
+            color: #ff6b4a;
+        }
+
+
+        /* =========================================================
+           SECTION
+           ========================================================= */
+
+        #breakdown-section {
+            position: relative;
+
+            max-width: 1050px;
+
+            min-height: 340px;
+
+            padding:
+                25px
+                345px
+                25px
+                0;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(16,30,43,.78),
+                    rgba(8,20,30,.70)
+                );
+
+            border-radius: 16px;
+
+            border:
+                1px solid rgba(64,115,159,.15);
+
+            overflow: hidden;
+
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,.02),
+                0 10px 35px rgba(0,0,0,.20);
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+
+            margin:
+                0 0 18px;
+
+            color: #ff6b4a;
+
+            font-weight: 600;
+        }
+
+
+        /* =========================================================
+           BREAKDOWN
+           ========================================================= */
+
+        .breakdown-bar {
+            max-width: 700px;
+        }
+
+        .breakdown-row {
+            display: flex;
+
+            align-items: center;
+
+            gap: 12px;
+
+            margin-bottom: 12px;
+
+            font-size: .85rem;
+        }
+
+        .breakdown-row .label {
+            width: 140px;
+            color: #aeb8c0;
+        }
+
+        .breakdown-row .bar-track {
+            flex: 1;
+
+            background: #1a2530;
+
+            border-radius: 6px;
+
+            height: 18px;
+
+            overflow: hidden;
+
+            box-shadow:
+                inset 0 2px 5px rgba(0,0,0,.2);
+        }
+
+        .breakdown-row .bar-fill {
+            height: 100%;
+
+            border-radius: 6px;
+
+            box-shadow:
+                0 0 7px rgba(255,255,255,.08);
+        }
+
+        .breakdown-row .count {
+            width: 50px;
+
+            text-align: right;
+
+            color: #fff;
+        }
+
+
+        /* =========================================================
+           3D GLOBE CONTAINER
+           ========================================================= */
+
+        .tg-globe-scene {
+            position: absolute;
+
+            right: 8px;
+            top: 50%;
+
+            width: 330px;
+            height: 330px;
+
+            transform:
+                translateY(-50%);
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            perspective: 1000px;
+
+            pointer-events: none;
+        }
+
+
+        /* =========================================================
+           GLOW
+           ========================================================= */
+
+        .tg-globe-glow {
+            position: absolute;
+
+            width: 235px;
+            height: 235px;
+
+            border-radius: 50%;
+
+            background:
+                radial-gradient(
+                    circle,
+                    rgba(255,70,30,.20),
+                    rgba(255,70,30,.06) 45%,
+                    transparent 72%
+                );
+
+            filter: blur(7px);
+
+            animation:
+                tgGlobeGlow 3s ease-in-out infinite;
+        }
+
+
+        /* =========================================================
+           MAIN 3D GLOBE
+           ========================================================= */
+
+        .tg-rotating-globe {
+            position: relative;
+
+            width: 235px;
+            height: 235px;
+
+            border-radius: 50%;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            transform-style: preserve-3d;
+
+            z-index: 8;
+
+            background:
+                radial-gradient(
+                    circle at 35% 28%,
+                    rgba(255,112,55,.25),
+                    rgba(18,22,27,.97) 68%
+                );
+
+            border:
+                2px solid rgba(255,81,38,.70);
+
+            box-shadow:
+                0 0 25px rgba(255,72,30,.35),
+                inset 0 0 35px rgba(255,74,30,.12),
+                inset -14px -10px 35px rgba(0,0,0,.48);
+
+            animation:
+                tgGlobeRotation 9s linear infinite;
+        }
+
+
+        /* =========================================================
+           LONGITUDE
+           ========================================================= */
+
+        .tg-longitude {
+            position: absolute;
+
+            width: 100%;
+            height: 100%;
+
+            border-radius: 50%;
+
+            border-left:
+                1px solid rgba(255,115,62,.34);
+
+            border-right:
+                1px solid rgba(255,115,62,.34);
+
+            pointer-events: none;
+        }
+
+        .tg-longitude-1 {
+            transform:
+                rotateY(35deg);
+        }
+
+        .tg-longitude-2 {
+            transform:
+                rotateY(-35deg);
+        }
+
+        .tg-longitude-3 {
+            transform:
+                rotateY(70deg);
+        }
+
+        .tg-longitude-4 {
+            transform:
+                rotateY(-70deg);
+        }
+
+
+        /* =========================================================
+           LATITUDE
+           ========================================================= */
+
+        .tg-latitude {
+            position: absolute;
+
+            width: 100%;
+            height: 42%;
+
+            border-radius: 50%;
+
+            border:
+                1px solid rgba(255,112,55,.30);
+
+            pointer-events: none;
+        }
+
+        .tg-latitude-1 {
+            transform:
+                translateZ(1px)
+                rotateX(72deg);
+        }
+
+        .tg-latitude-2 {
+            transform:
+                translateZ(1px)
+                rotateX(-72deg);
+        }
+
+        .tg-latitude-3 {
+            height: 65%;
+
+            transform:
+                rotateX(72deg);
+        }
+
+
+        /* =========================================================
+           FIREFIGHTER IMAGE
+           ========================================================= */
+
+        .tg-firefighter-logo {
+            position: relative;
+
+            width: 172px;
+            height: 172px;
+
+            object-fit: contain;
+
+            z-index: 12;
+
+            transform-style: preserve-3d;
+
+            filter:
+                drop-shadow(0 0 6px rgba(255,72,28,.90))
+                drop-shadow(0 0 18px rgba(255,72,28,.35));
+
+            animation:
+                tgFirefighter3D 4s ease-in-out infinite;
+        }
+
+
+        /* =========================================================
+           ORBIT RINGS
+           ========================================================= */
+
+        .tg-orbit {
+            position: absolute;
+
+            border-radius: 50%;
+
+            pointer-events: none;
+
+            transform-style: preserve-3d;
+
+            z-index: 4;
+        }
+
+        .tg-orbit-1 {
+            width: 305px;
+            height: 305px;
+
+            border:
+                1px solid rgba(255,79,37,.55);
+
+            transform:
+                rotateX(67deg)
+                rotateZ(10deg);
+
+            animation:
+                tgOrbit1 7s linear infinite;
+        }
+
+        .tg-orbit-2 {
+            width: 290px;
+            height: 290px;
+
+            border:
+                1px solid rgba(255,116,52,.43);
+
+            transform:
+                rotateY(67deg)
+                rotateZ(20deg);
+
+            animation:
+                tgOrbit2 9s linear infinite;
+        }
+
+        .tg-orbit-3 {
+            width: 300px;
+            height: 155px;
+
+            border:
+                1px solid rgba(255,68,28,.52);
+
+            transform:
+                rotateZ(24deg);
+
+            animation:
+                tgOrbit3 5s linear infinite;
+        }
+
+
+        /* =========================================================
+           ORBIT DOTS
+           ========================================================= */
+
+        .tg-orbit-dot {
+            position: absolute;
+
+            width: 7px;
+            height: 7px;
+
+            border-radius: 50%;
+
+            background: #ff6f3e;
+
+            box-shadow:
+                0 0 7px rgba(255,88,40,1),
+                0 0 18px rgba(255,88,40,.72);
+
+            z-index: 15;
+        }
+
+        .tg-dot-1 {
+            top: 22px;
+            right: 79px;
+
+            animation:
+                tgDot1 4s linear infinite;
+        }
+
+        .tg-dot-2 {
+            left: 50px;
+            bottom: 32px;
+
+            width: 5px;
+            height: 5px;
+
+            animation:
+                tgDot2 5s ease-in-out infinite;
+        }
+
+        .tg-dot-3 {
+            left: 11px;
+            top: 107px;
+
+            width: 5px;
+            height: 5px;
+
+            animation:
+                tgDot3 4.5s ease-in-out infinite;
+        }
+
+
+        /* =========================================================
+           BLUE HOLOGRAM PLATFORM
+           ========================================================= */
+
+        .tg-platform {
+            position: absolute;
+
+            bottom: 3px;
+
+            width: 185px;
+            height: 25px;
+
+            border-radius: 50%;
+
+            border:
+                1px solid rgba(0,154,255,.72);
+
+            background:
+                radial-gradient(
+                    ellipse,
+                    rgba(0,150,255,.15),
+                    transparent 67%
+                );
+
+            box-shadow:
+                0 0 15px rgba(0,150,255,.40),
+                inset 0 0 11px rgba(0,150,255,.22);
+
+            z-index: 10;
+
+            animation:
+                tgPlatformPulse 2.5s ease-in-out infinite;
+        }
+
+        .tg-platform::before {
+            content: "";
+
+            position: absolute;
+
+            left: 50%;
+            top: 50%;
+
+            transform:
+                translate(-50%, -50%);
+
+            width: 95px;
+            height: 5px;
+
+            border-radius: 50%;
+
+            background:
+                rgba(0,170,255,.8);
+
+            filter: blur(4px);
+        }
+
+
+        /* =========================================================
+           LOADING + TIMESTAMP
+           ========================================================= */
+
+        #loading {
+            color: #aeb8c0;
+        }
+
+        .timestamp {
+            color: #667985;
+
+            font-size: .8rem;
+
+            margin-top: 20px;
+        }
+
+
+        /* =========================================================
+           ANIMATIONS
+           ========================================================= */
+
+        @keyframes tgTitle3D {
+
+            0% {
+                transform:
+                    perspective(500px)
+                    rotateY(-15deg)
+                    rotateX(5deg);
+            }
+
+            25% {
+                transform:
+                    perspective(500px)
+                    rotateY(0deg)
+                    rotateX(-5deg);
+            }
+
+            50% {
+                transform:
+                    perspective(500px)
+                    rotateY(15deg)
+                    rotateX(5deg);
+            }
+
+            75% {
+                transform:
+                    perspective(500px)
+                    rotateY(0deg)
+                    rotateX(-5deg);
+            }
+
+            100% {
+                transform:
+                    perspective(500px)
+                    rotateY(-15deg)
+                    rotateX(5deg);
+            }
+        }
+
+
+        @keyframes tgIcon3DRotation {
+
+            0% {
+                transform:
+                    rotateX(0deg)
+                    rotateY(0deg)
+                    rotateZ(0deg);
+            }
+
+            25% {
+                transform:
+                    rotateX(12deg)
+                    rotateY(90deg)
+                    rotateZ(4deg);
+            }
+
+            50% {
+                transform:
+                    rotateX(-8deg)
+                    rotateY(180deg)
+                    rotateZ(-4deg);
+            }
+
+            75% {
+                transform:
+                    rotateX(12deg)
+                    rotateY(270deg)
+                    rotateZ(4deg);
+            }
+
+            100% {
+                transform:
+                    rotateX(0deg)
+                    rotateY(360deg)
+                    rotateZ(0deg);
+            }
+        }
+
+
+        @keyframes tgGlobeRotation {
+
+            from {
+                transform:
+                    rotateY(0deg)
+                    rotateX(2deg);
+            }
+
+            to {
+                transform:
+                    rotateY(360deg)
+                    rotateX(2deg);
+            }
+        }
+
+
+        @keyframes tgFirefighter3D {
+
+            0% {
+                transform:
+                    translateZ(20px)
+                    rotateY(-10deg)
+                    rotateX(2deg)
+                    scale(1);
+            }
+
+            25% {
+                transform:
+                    translateZ(28px)
+                    rotateY(7deg)
+                    rotateX(-2deg)
+                    scale(1.02);
+            }
+
+            50% {
+                transform:
+                    translateZ(22px)
+                    rotateY(12deg)
+                    rotateX(2deg)
+                    scale(1.035);
+            }
+
+            75% {
+                transform:
+                    translateZ(28px)
+                    rotateY(-7deg)
+                    rotateX(-2deg)
+                    scale(1.02);
+            }
+
+            100% {
+                transform:
+                    translateZ(20px)
+                    rotateY(-10deg)
+                    rotateX(2deg)
+                    scale(1);
+            }
+        }
+
+
+        @keyframes tgOrbit1 {
+
+            from {
+                transform:
+                    rotateX(67deg)
+                    rotateZ(0deg);
+            }
+
+            to {
+                transform:
+                    rotateX(67deg)
+                    rotateZ(360deg);
+            }
+        }
+
+
+        @keyframes tgOrbit2 {
+
+            from {
+                transform:
+                    rotateY(67deg)
+                    rotateZ(360deg);
+            }
+
+            to {
+                transform:
+                    rotateY(67deg)
+                    rotateZ(0deg);
+            }
+        }
+
+
+        @keyframes tgOrbit3 {
+
+            from {
+                transform:
+                    rotateZ(24deg);
+            }
+
+            to {
+                transform:
+                    rotateZ(384deg);
+            }
+        }
+
+
+        @keyframes tgGlobeGlow {
+
+            0%,
+            100% {
+                transform:
+                    scale(.93);
+
+                opacity: .48;
+            }
+
+            50% {
+                transform:
+                    scale(1.08);
+
+                opacity: 1;
+            }
+        }
+
+
+        @keyframes tgPlatformPulse {
+
+            0%,
+            100% {
+                transform:
+                    scaleX(.88);
+
+                opacity: .48;
+            }
+
+            50% {
+                transform:
+                    scaleX(1);
+
+                opacity: 1;
+            }
+        }
+
+
+        @keyframes tgDot1 {
+
+            0% {
+                transform:
+                    translate(0, 0)
+                    scale(1);
+            }
+
+            25% {
+                transform:
+                    translate(-17px, 9px)
+                    scale(1.35);
+            }
+
+            50% {
+                transform:
+                    translate(-4px, 25px)
+                    scale(.85);
+            }
+
+            75% {
+                transform:
+                    translate(16px, 8px)
+                    scale(1.2);
+            }
+
+            100% {
+                transform:
+                    translate(0, 0)
+                    scale(1);
+            }
+        }
+
+
+        @keyframes tgDot2 {
+
+            0%,
+            100% {
+                transform:
+                    translate(0, 0);
+
+                opacity: .5;
+            }
+
+            50% {
+                transform:
+                    translate(20px, -15px);
+
+                opacity: 1;
+            }
+        }
+
+
+        @keyframes tgDot3 {
+
+            0%,
+            100% {
+                transform:
+                    translateY(0);
+
+                opacity: .35;
+            }
+
+            50% {
+                transform:
+                    translateY(28px);
+
+                opacity: 1;
+            }
+        }
+
+
+        /* =========================================================
+           RESPONSIVE
+           ========================================================= */
+
+        @media (max-width: 1200px) {
+
+            .grid {
+                grid-template-columns:
+                    repeat(2, minmax(220px, 1fr));
+            }
+
+            #breakdown-section {
+                padding-right: 20px;
+                min-height: auto;
+            }
+
+            .tg-globe-scene {
+                position: relative;
+
+                right: auto;
+                top: auto;
+
+                transform: none;
+
+                margin:
+                    25px auto
+                    0;
+            }
+        }
+
+
+        @media (max-width: 650px) {
+
+            body {
+                padding: 18px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tg-page-title {
+                gap: 11px;
+            }
+
+            .tg-title-icon {
+                width: 46px;
+                height: 46px;
+            }
+
+            .tg-title-icon svg {
+                width: 34px;
+                height: 34px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            #breakdown-section {
+                padding: 20px;
+            }
+
+            .breakdown-row .label {
+                width: 105px;
+                font-size: .76rem;
+            }
+
+            .tg-globe-scene {
+                transform:
+                    scale(.82);
+
+                transform-origin:
+                    center center;
+
+                margin-top: 0;
+                margin-bottom: -40px;
+            }
+        }
+
+
+        /* =========================================================
+           TOUCH DEVICES
+           ========================================================= */
+
+        @media (hover: none) and (pointer: coarse) {
+
+            .grid .card:active {
+                transform:
+                    translateY(-7px)
+                    scale(1.09);
+
+                z-index: 100;
+
+                opacity: 1;
+            }
+
+            .grid:has(.card:active) .card:not(:active) {
+                opacity: .80;
+            }
+        }
+
+
+    </style>
+</head>
+
+
+<body>
+
+
+    <!-- =========================================================
+         BACK
+         ========================================================= -->
+
+    <a
+        href="/dashboard"
+        class="back-link"
+    >
+        ← Back to Dashboard
+    </a>
+
+
+    <!-- =========================================================
+         SYSTEM SUMMARY TITLE
+         ========================================================= -->
+
+    <div class="tg-page-title">
+
+
+        <!-- 3D ECG ICON -->
+
+        <div class="tg-title-icon">
+
+            <svg
+                viewBox="0 0 64 64"
+                aria-hidden="true"
+            >
+
+                <polyline
+                    points="
+                        2,34
+                        12,34
+                        18,14
+                        26,49
+                        34,22
+                        42,34
+                        62,34
+                    "
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="4"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+
+            </svg>
+
+        </div>
+
+
+        <div>
+
+            <h1>
+                System Summary
+            </h1>
+
+            <p class="subtitle">
+                Overall statistics from the current thermal classification run.
+            </p>
+
+        </div>
+
+
+    </div>
+
+
+    <!-- =========================================================
+         EXISTING LOADING
+         ========================================================= -->
+
+    <p id="loading">
+        Loading summary...
+    </p>
+
+
+    <!-- =========================================================
+         STAT CARDS
+         ========================================================= -->
+
+    <div
+        class="grid"
+        id="stat-cards"
+        style="display:none;"
+    >
+
+
+        <!-- =====================================================
+             CARD 1
+             ===================================================== -->
+
+        <div class="card hotspot">
+
+            <div class="tg-card-icon-wrap">
+
+                <div class="tg-card-icon">
+                    🔥
+                </div>
+
+            </div>
+
+
+            <div class="tg-card-content">
+
+                <div class="label">
+                    Total hotspots analyzed
+                </div>
+
+                <div
+                    class="value"
+                    id="stat-total"
+                >
+                    --
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             CARD 2
+             ===================================================== -->
+
+        <div class="card anomaly">
+
+            <div class="tg-card-icon-wrap">
+
+                <div class="tg-card-icon">
+                    ⚠️
+                </div>
+
+            </div>
+
+
+            <div class="tg-card-content">
+
+                <div class="label">
+                    Active anomalies
+                </div>
+
+                <div
+                    class="value"
+                    id="stat-anomalies"
+                >
+                    --
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             CARD 3
+             ===================================================== -->
+
+        <div class="card ml">
+
+            <div class="tg-card-icon-wrap">
+
+                <div class="tg-card-icon">
+                    🎯
+                </div>
+
+            </div>
+
+
+            <div class="tg-card-content">
+
+                <div class="label">
+                    ML avg confidence
+                </div>
+
+                <div
+                    class="value"
+                    id="stat-ml-conf"
+                >
+                    --
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             CARD 4
+             ===================================================== -->
+
+        <div class="card ml">
+
+            <div class="tg-card-icon-wrap">
+
+                <div class="tg-card-icon">
+                    🤖
+                </div>
+
+            </div>
+
+
+            <div class="tg-card-content">
+
+                <div class="label">
+                    ML/rule agreement
+                </div>
+
+                <div
+                    class="value"
+                    id="stat-ml-agree"
+                >
+                    --
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             CARD 5
+             ===================================================== -->
+
+        <div class="card green">
+
+            <div class="tg-card-icon-wrap">
+
+                <div class="tg-card-icon">
+                    🏭
+                </div>
+
+            </div>
+
+
+            <div class="tg-card-content">
+
+                <div class="label">
+                    Industrial zones mapped
+                </div>
+
+                <div
+                    class="value"
+                    id="stat-industrial-zones"
+                >
+                    --
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             CARD 6
+             ===================================================== -->
+
+        <div class="card green">
+
+            <div class="tg-card-icon-wrap">
+
+                <div class="tg-card-icon">
+                    🌳
+                </div>
+
+            </div>
+
+
+            <div class="tg-card-content">
+
+                <div class="label">
+                    Forest polygons mapped
+                </div>
+
+                <div
+                    class="value"
+                    id="stat-forest"
+                >
+                    --
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+    <!-- =========================================================
+         CLASSIFICATION SECTION
+         ========================================================= -->
+
+    <div
+        id="breakdown-section"
+        style="display:none;"
+    >
+
+
+        <div class="section-title">
+            Classification breakdown
+        </div>
+
+
+        <!-- EXISTING BREAKDOWN -->
+
+        <div
+            class="breakdown-bar"
+            id="breakdown-bar"
+        ></div>
+
+
+        <!-- =====================================================
+             3D ROTATING GLOBE
+             ===================================================== -->
+
+        <div class="tg-globe-scene">
+
+
+            <!-- glow -->
+
+            <div class="tg-globe-glow"></div>
+
+
+            <!-- orbit rings -->
+
+            <div
+                class="tg-orbit tg-orbit-1"
+            ></div>
+
+            <div
+                class="tg-orbit tg-orbit-2"
+            ></div>
+
+            <div
+                class="tg-orbit tg-orbit-3"
+            ></div>
+
+
+            <!-- particles -->
+
+            <div
+                class="tg-orbit-dot tg-dot-1"
+            ></div>
+
+            <div
+                class="tg-orbit-dot tg-dot-2"
+            ></div>
+
+            <div
+                class="tg-orbit-dot tg-dot-3"
+            ></div>
+
+
+            <!-- =================================================
+                 MAIN 3D GLOBE
+                 ================================================= -->
+
+            <div class="tg-rotating-globe">
+
+
+                <!-- longitude -->
+
+                <div
+                    class="tg-longitude tg-longitude-1"
+                ></div>
+
+                <div
+                    class="tg-longitude tg-longitude-2"
+                ></div>
+
+                <div
+                    class="tg-longitude tg-longitude-3"
+                ></div>
+
+                <div
+                    class="tg-longitude tg-longitude-4"
+                ></div>
+
+
+                <!-- latitude -->
+
+                <div
+                    class="tg-latitude tg-latitude-1"
+                ></div>
+
+                <div
+                    class="tg-latitude tg-latitude-2"
+                ></div>
+
+                <div
+                    class="tg-latitude tg-latitude-3"
+                ></div>
+
+
+                <!-- firefighter image -->
+
+                <img
+                    src="/static/firefighter-logo.png"
+                    alt="Firefighter"
+                    class="tg-firefighter-logo"
+                />
+
+
+            </div>
+
+
+            <!-- blue platform -->
+
+            <div class="tg-platform"></div>
+
+
+        </div>
+
+
+    </div>
+
+
+    <!-- =========================================================
+         TIMESTAMP
+         ========================================================= -->
+
+    <p
+        class="timestamp"
+        id="timestamp"
+    ></p>
+
+
+    <!-- =========================================================
+         EXISTING JAVASCRIPT
+         DO NOT CHANGE
+         ========================================================= -->
+
+    <script>
+
+        const classColors = {
+
+            "industrial_fire": "#d32f2f",
+
+            "wildfire": "#388e3c",
+
+            "agricultural_burn": "#f9a825",
+
+            "unclassified": "#9e9e9e"
+
+        };
+
+
+        const classLabels = {
+
+            "industrial_fire": "Industrial fire",
+
+            "wildfire": "Wildfire",
+
+            "agricultural_burn": "Agricultural burn",
+
+            "unclassified": "Unclassified"
+
+        };
+
+
+        /* =========================================================
+           EXISTING API OPERATION
+           ========================================================= */
+
+        fetch("/api/summary")
+
+            .then(res => res.json())
+
+            .then(data => {
+
+
+                /* =================================================
+                   EXISTING OPERATIONS
+                   ================================================= */
+
+                document.getElementById(
+                    "loading"
+                ).style.display = "none";
+
+
+                document.getElementById(
+                    "stat-cards"
+                ).style.display = "grid";
+
+
+                document.getElementById(
+                    "breakdown-section"
+                ).style.display = "block";
+
+
+                document.getElementById(
+                    "stat-total"
+                ).textContent =
+                    data.total_hotspots;
+
+
+                document.getElementById(
+                    "stat-anomalies"
+                ).textContent =
+                    data.anomaly_count;
+
+
+                document.getElementById(
+                    "stat-ml-conf"
+                ).textContent =
+
+                    data.avg_ml_confidence
+
+                        ? (
+                            data.avg_ml_confidence * 100
+                        ).toFixed(1) + "%"
+
+                        : "N/A";
+
+
+                document.getElementById(
+                    "stat-ml-agree"
+                ).textContent =
+
+                    data.ml_agreement_pct
+
+                        ? (
+                            data.ml_agreement_pct
+                        ).toFixed(1) + "%"
+
+                        : "N/A";
+
+
+                document.getElementById(
+                    "stat-industrial-zones"
+                ).textContent =
+
+                    data.industrial_zones_mapped
+                        .toLocaleString();
+
+
+                document.getElementById(
+                    "stat-forest"
+                ).textContent =
+
+                    data.forest_polygons_mapped
+                        .toLocaleString();
+
+
+                const breakdownBar =
+                    document.getElementById(
+                        "breakdown-bar"
+                    );
+
+
+                const total =
+                    data.total_hotspots;
+
+
+                Object.entries(
+                    data.class_counts
+                )
+
+                .forEach(
+                    ([cls, count]) => {
+
+
+                        const pct =
+                            (
+                                (count / total) * 100
+                            ).toFixed(1);
+
+
+                        const row =
+                            document.createElement(
+                                "div"
+                            );
+
+
+                        row.className =
+                            "breakdown-row";
+
+
+                        row.innerHTML = `
+
+                            <div class="label">
+                                ${classLabels[cls] || cls}
+                            </div>
+
+                            <div class="bar-track">
+
+                                <div
+                                    class="bar-fill"
+                                    style="
+                                        width:${pct}%;
+                                        background:${classColors[cls] || '#666'}
+                                    "
+                                ></div>
+
+                            </div>
+
+                            <div class="count">
+                                ${count}
+                            </div>
+
+                        `;
+
+
+                        breakdownBar.appendChild(
+                            row
+                        );
+
+                    }
+                );
+
+
+                document.getElementById(
+                    "timestamp"
+                ).textContent =
+
+                    `Data last refreshed: ${data.last_updated}`;
+
+            });
+
+    </script>
+
+
+</body>
+</html>

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Industrial Fire Detection Dashboard</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; }
+        #map { height: 100vh; width: 100%; }
+        .legend {
+            position: absolute; top: 10px; right: 10px; z-index: 1000;
+            background: white; padding: 12px; border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3); font-size: 13px;
+        }
+        .legend div { margin-bottom: 4px; }
+        .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+
+        .top-bar {
+            position: absolute; top: 10px; left: 10px; z-index: 1000;
+            display: flex; gap: 8px; flex-wrap: wrap;
+        }
+        .back-link, .alerts-link, .summary-link, #refresh-btn {
+            background: white; padding: 8px 14px; border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3); text-decoration: none;
+            color: #333; font-size: 13px; font-weight: bold;
+            border: none; cursor: pointer; white-space: nowrap;
+        }
+        .alerts-link { background: #ff1744; color: #fff; }
+        #refresh-btn { background: #4caf50; color: #fff; }
+        .summary-link { background: #4fc3f7; color: #fff; }
+        #refresh-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        #last-updated {
+            position: absolute; bottom: 10px; left: 10px; z-index: 1000;
+            background: white; padding: 6px 12px; border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3); font-size: 12px; color: #333;
+        }
+
+        .search-box {
+            position: absolute; top: 60px; left: 10px; z-index: 1000;
+            width: 220px;
+        }
+        .search-box input {
+            width: 100%; padding: 9px 12px; border-radius: 8px;
+            border: 1px solid #ccc; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            font-size: 13px; box-sizing: border-box;
+        }
+        .search-results {
+            background: white; border-radius: 8px; margin-top: 4px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3); max-height: 220px;
+            overflow-y: auto; display: none;
+        }
+        .search-results div {
+            padding: 8px 12px; font-size: 12px; cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        .search-results div:hover { background: #f5f5f5; }
+        .search-results .no-results { color: #999; cursor: default; }
+
+        .filter-panel {
+            position: absolute; top: 150px; left: 10px; z-index: 1000;
+            background: white; padding: 14px; border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3); font-size: 13px;
+            width: 220px;
+        }
+        .filter-panel h4 { margin-bottom: 10px; font-size: 13px; }
+        .filter-panel label {
+            display: flex; align-items: center; gap: 6px;
+            margin-bottom: 6px; cursor: pointer;
+        }
+        .filter-panel select, .filter-panel input[type=date] {
+            width: 100%; padding: 5px; margin-top: 3px; margin-bottom: 8px;
+            border-radius: 4px; border: 1px solid #ccc; font-size: 12px;
+        }
+        .filter-panel .field-label { font-weight: bold; font-size: 12px; color: #333; }
+        #result-count { font-size: 12px; color: #666; margin-top: 6px; }
+
+        @keyframes pulse {
+            0%   { stroke-opacity: 1;   r: 8; }
+            70%  { stroke-opacity: 0;   r: 20; }
+            100% { stroke-opacity: 0;   r: 20; }
+        }
+        .pulse-ring {
+            fill: none;
+            stroke: #d32f2f;
+            stroke-width: 2;
+            animation: pulse 1.5s ease-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <a href="/" class="back-link">← Home</a>
+        <a href="/alerts" class="alerts-link">⚠️ Alerts</a>
+        <button id="refresh-btn">🔄 Fetch Latest Data</button>
+        <a href="/summary" class="summary-link">📊 Summary</a>
+    </div>
+
+    <div class="search-box">
+        <input type="text" id="search-input" placeholder="🔍 Search facility or region..." autocomplete="off">
+        <div class="search-results" id="search-results"></div>
+    </div>
+
+    <div class="filter-panel">
+        <h4>🎛️ Filters</h4>
+
+        <div class="field-label">Fire type</div>
+        <label><input type="checkbox" value="industrial_fire" class="class-filter" checked> Industrial fire</label>
+        <label><input type="checkbox" value="wildfire" class="class-filter" checked> Wildfire</label>
+        <label><input type="checkbox" value="agricultural_burn" class="class-filter" checked> Agricultural burn</label>
+        <label><input type="checkbox" value="unclassified" class="class-filter" checked> Unclassified</label>
+
+        <label style="margin-top:4px"><input type="checkbox" id="anomaly-only"> Show anomalies only</label>
+
+        <div class="field-label" style="margin-top:8px">From date</div>
+        <input type="date" id="date-from">
+        <div class="field-label">To date</div>
+        <input type="date" id="date-to">
+
+        <div id="result-count">-- points shown</div>
+    </div>
+
+    <div id="map"></div>
+
+    <div id="last-updated">🕐 Loading...</div>
+
+    <div class="legend">
+        <div><span class="dot" style="background:#d32f2f"></span>Industrial fire</div>
+        <div><span class="dot" style="background:#388e3c"></span>Wildfire</div>
+        <div><span class="dot" style="background:#f9a825"></span>Agricultural burn</div>
+        <div><span class="dot" style="background:#9e9e9e"></span>Unclassified</div>
+        <div><span class="dot" style="background:#ff1744; box-shadow:0 0 4px #ff1744"></span>⚠️ Anomaly (accident risk)</div>
+        <div><span class="dot" style="background:#9c27b0"></span>🔥 Persistent thermal source</div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map').setView([22.0, 79.0], 5);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        const colors = {
+            "industrial_fire": "#d32f2f",
+            "wildfire": "#388e3c",
+            "agricultural_burn": "#f9a825",
+            "unclassified": "#9e9e9e"
+        };
+
+        let allData = [];
+        let markerLayer = L.layerGroup().addTo(map);
+
+        function renderPoints(data) {
+            markerLayer.clearLayers();
+
+            data.forEach(point => {
+                const color = colors[point.final_class] || "#9e9e9e";
+                const isAnomaly = point.is_anomaly === true || point.is_anomaly === "True";
+                const isPersistent = point.is_persistent_source === true || point.is_persistent_source === "True";
+
+                const markerColor = isPersistent ? "#9c27b0" : color;
+
+                const mlConfidencePct = point.ml_confidence ? (Number(point.ml_confidence) * 100).toFixed(0) : "N/A";
+                const mlMatch = point.ml_prediction === point.final_class;
+
+                const popupText = `
+                    <b>${point.final_class}</b> ${isAnomaly ? '<br><span style="color:#d32f2f;font-weight:bold">⚠️ ANOMALY DETECTED</span>' : ''}<br>
+                    ${isPersistent ? '<span style="color:#9c27b0;font-weight:bold">🔥 PERSISTENT THERMAL SOURCE</span><br>' : ''}
+                    FRP: ${point.frp}<br>
+                    Date: ${point.acq_date}<br>
+                    Nearest industry: ${Number(point.nearest_industrial_km).toFixed(2)} km<br>
+                    Type: ${point.nearest_industrial_type}<br>
+                    <hr style="margin:6px 0">
+                    🤖 ML confidence: <b>${mlConfidencePct}%</b> ${mlMatch ? '✅' : '⚠️ (differs from rule-based)'}<br>
+                    <a href="/facility/${point.facility_osm_id || ''}" style="color:#1976d2">View facility details →</a>
+                `;
+
+                const marker = L.circleMarker([point.latitude, point.longitude], {
+                    radius: isAnomaly ? 7 : 5,
+                    color: isAnomaly ? "#ff1744" : markerColor,
+                    fillColor: markerColor,
+                    fillOpacity: 0.85,
+                    weight: isAnomaly ? 3 : 1
+                })
+                .bindPopup(popupText)
+                .addTo(markerLayer);
+
+                point._marker = marker;
+
+                if (isAnomaly) {
+                    const pulseIcon = L.divIcon({
+                        className: '',
+                        html: `<svg width="40" height="40" viewBox="0 0 40 40">
+                                 <circle cx="20" cy="20" r="8" class="pulse-ring"/>
+                               </svg>`,
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 20]
+                    });
+                    L.marker([point.latitude, point.longitude], { icon: pulseIcon, interactive: false }).addTo(markerLayer);
+                }
+            });
+
+            document.getElementById("result-count").textContent = `${data.length} points shown`;
+        }
+
+        function applyFilters() {
+            const checkedClasses = Array.from(document.querySelectorAll(".class-filter:checked")).map(el => el.value);
+            const anomalyOnly = document.getElementById("anomaly-only").checked;
+            const dateFrom = document.getElementById("date-from").value;
+            const dateTo = document.getElementById("date-to").value;
+
+            let filtered = allData.filter(p => checkedClasses.includes(p.final_class));
+
+            if (anomalyOnly) {
+                filtered = filtered.filter(p => p.is_anomaly === true || p.is_anomaly === "True");
+            }
+            if (dateFrom) {
+                filtered = filtered.filter(p => p.acq_date >= dateFrom);
+            }
+            if (dateTo) {
+                filtered = filtered.filter(p => p.acq_date <= dateTo);
+            }
+
+            renderPoints(filtered);
+        }
+
+        document.querySelectorAll(".class-filter").forEach(el => el.addEventListener("change", applyFilters));
+        document.getElementById("anomaly-only").addEventListener("change", applyFilters);
+        document.getElementById("date-from").addEventListener("change", applyFilters);
+        document.getElementById("date-to").addEventListener("change", applyFilters);
+
+        // ---- Search functionality ----
+        const searchInput = document.getElementById("search-input");
+        const searchResultsBox = document.getElementById("search-results");
+
+        searchInput.addEventListener("input", () => {
+            const query = searchInput.value.trim().toLowerCase();
+            searchResultsBox.innerHTML = "";
+
+            if (query.length < 2) {
+                searchResultsBox.style.display = "none";
+                return;
+            }
+
+            const matches = allData.filter(p =>
+                (p.nearest_industrial_name && p.nearest_industrial_name.toLowerCase().includes(query)) ||
+                (p.nearest_industrial_type && p.nearest_industrial_type.toLowerCase().includes(query))
+            ).slice(0, 10);
+
+            if (matches.length === 0) {
+                searchResultsBox.innerHTML = `<div class="no-results">No matches found</div>`;
+            } else {
+                matches.forEach(m => {
+                    const item = document.createElement("div");
+                    item.textContent = `${m.nearest_industrial_name !== "unnamed" ? m.nearest_industrial_name : "Unnamed"} — ${m.nearest_industrial_type} (${m.final_class})`;
+                    item.addEventListener("click", () => {
+                        map.setView([m.latitude, m.longitude], 11);
+                        if (m._marker) m._marker.openPopup();
+                        searchResultsBox.style.display = "none";
+                        searchInput.value = "";
+                    });
+                    searchResultsBox.appendChild(item);
+                });
+            }
+            searchResultsBox.style.display = "block";
+        });
+
+        document.addEventListener("click", (e) => {
+            if (!e.target.closest(".search-box")) {
+                searchResultsBox.style.display = "none";
+            }
+        });
+
+        // ---- Refresh data functionality ----
+        document.getElementById("refresh-btn").addEventListener("click", () => {
+            const btn = document.getElementById("refresh-btn");
+            btn.textContent = "⏳ Refreshing... (~1 min)";
+            btn.disabled = true;
+
+            fetch("/api/refresh-data", { method: "POST" })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        btn.textContent = "✅ Refreshed! Reloading...";
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        btn.textContent = "❌ Failed - " + data.message;
+                        btn.disabled = false;
+                    }
+                });
+        });
+
+        // ---- Last updated timestamp ----
+        function updateLastRefreshedTime() {
+            fetch("/api/last-updated")
+                .then(res => res.json())
+                .then(data => {
+                    const updatedTime = new Date(data.timestamp * 1000);
+                    const now = new Date();
+                    const diffMinutes = Math.floor((now - updatedTime) / 60000);
+
+                    let displayText;
+                    if (diffMinutes < 1) {
+                        displayText = "just now";
+                    } else if (diffMinutes < 60) {
+                        displayText = `${diffMinutes} min ago`;
+                    } else {
+                        const diffHours = Math.floor(diffMinutes / 60);
+                        displayText = `${diffHours} hr ago`;
+                    }
+
+                    document.getElementById("last-updated").textContent =
+                        `🕐 Data last refreshed: ${data.last_updated} (${displayText})`;
+                });
+        }
+
+        updateLastRefreshedTime();
+        setInterval(updateLastRefreshedTime, 30000);
+
+        fetch("/api/hotspots")
+            .then(res => res.json())
+            .then(data => {
+                allData = data;
+                renderPoints(allData);
+            });
+    </script>
+</body>
+</html>

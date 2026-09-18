@@ -1,0 +1,1808 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>Facility Detail</title>
+
+    <meta charset="utf-8" />
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    />
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+
+        body {
+            font-family: Arial, sans-serif;
+
+            background:
+                radial-gradient(
+                    circle at 50% 0%,
+                    rgba(255, 86, 40, 0.045),
+                    transparent 34%
+                ),
+                #0f1419;
+
+            color: #fff;
+
+            padding: 30px;
+
+            overflow-x: hidden;
+        }
+
+
+        /* =========================================================
+           BACK LINK
+           ========================================================= */
+
+        .back-link {
+
+            color: #ff6b4a;
+
+            text-decoration: none;
+
+            font-size: 14px;
+
+            transition: 0.2s ease;
+        }
+
+
+        .back-link:hover {
+
+            color: #ff8a68;
+
+            text-shadow:
+                0 0 12px
+                rgba(
+                    255,
+                    107,
+                    74,
+                    0.55
+                );
+        }
+
+
+        /* =========================================================
+           FACILITY HEADER
+           ========================================================= */
+
+        h1 {
+
+            margin: 16px 0 4px;
+
+            font-size: 1.6rem;
+
+            letter-spacing: -0.4px;
+        }
+
+
+        .subtitle {
+
+            color: #aeb8c0;
+
+            margin-bottom: 24px;
+
+            font-size: 0.86rem;
+        }
+
+
+        /* =========================================================
+           KPI CARDS
+           ========================================================= */
+
+        .cards {
+
+            display: flex;
+
+            gap: 18px;
+
+            flex-wrap: wrap;
+
+            margin-bottom: 30px;
+        }
+
+
+        .card {
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(
+                        31,
+                        43,
+                        54,
+                        0.96
+                    ),
+                    rgba(
+                        20,
+                        30,
+                        39,
+                        0.96
+                    )
+                );
+
+            padding: 19px 24px;
+
+            border-radius: 13px;
+
+            min-width: 205px;
+
+            border:
+                1px solid
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.055
+                );
+
+            box-shadow:
+                0 10px 28px
+                rgba(
+                    0,
+                    0,
+                    0,
+                    0.22
+                );
+
+            position: relative;
+
+            overflow: hidden;
+
+            animation:
+                cardPulse
+                3.2s
+                ease-in-out
+                infinite;
+
+            transition:
+                transform 0.25s ease,
+                box-shadow 0.25s ease,
+                border-color 0.25s ease;
+        }
+
+
+        .card:hover {
+
+            transform:
+                translateY(-4px)
+                scale(1.025);
+
+            border-color:
+                rgba(
+                    255,
+                    107,
+                    74,
+                    0.28
+                );
+
+            box-shadow:
+                0 15px 34px
+                rgba(
+                    0,
+                    0,
+                    0,
+                    0.30
+                ),
+                0 0 24px
+                rgba(
+                    255,
+                    107,
+                    74,
+                    0.13
+                );
+        }
+
+
+        .card::after {
+
+            content: "";
+
+            position: absolute;
+
+            inset: 0;
+
+            pointer-events: none;
+
+            background:
+                radial-gradient(
+                    circle at 90% 0%,
+                    rgba(
+                        255,
+                        107,
+                        74,
+                        0.14
+                    ),
+                    transparent 42%
+                );
+
+            opacity: 0.8;
+        }
+
+
+        .card:nth-child(2) {
+
+            animation-delay:
+                0.25s;
+        }
+
+
+        .card:nth-child(3) {
+
+            animation-delay:
+                0.50s;
+        }
+
+
+        @keyframes cardPulse {
+
+            0%,
+            100% {
+
+                transform:
+                    scale(1);
+            }
+
+
+            50% {
+
+                transform:
+                    scale(1.018);
+            }
+        }
+
+
+        .card-inner {
+
+            position: relative;
+
+            z-index: 2;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 15px;
+        }
+
+
+        /* =========================================================
+           3D KPI ICON
+           ========================================================= */
+
+        .kpi-icon-scene {
+
+            width: 50px;
+
+            height: 50px;
+
+            perspective: 350px;
+
+            flex-shrink: 0;
+        }
+
+
+        .kpi-icon-3d {
+
+            width: 50px;
+
+            height: 50px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            border-radius: 14px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    #2d4453,
+                    #111c24
+                );
+
+            border:
+                1px solid
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.10
+                );
+
+            box-shadow:
+                inset
+                0 1px 0
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.11
+                ),
+                0 9px 20px
+                rgba(
+                    0,
+                    0,
+                    0,
+                    0.25
+                );
+
+            transform-style:
+                preserve-3d;
+
+            animation:
+                kpiRotate
+                4.4s
+                ease-in-out
+                infinite;
+
+            will-change:
+                transform;
+        }
+
+
+        .card:nth-child(2)
+        .kpi-icon-3d {
+
+            animation-delay:
+                0.60s;
+        }
+
+
+        .card:nth-child(3)
+        .kpi-icon-3d {
+
+            animation-delay:
+                1.20s;
+        }
+
+
+        .kpi-icon-symbol {
+
+            font-size: 1.55rem;
+
+            line-height: 1;
+
+            filter:
+                drop-shadow(
+                    0 0 8px
+                    rgba(
+                        255,
+                        107,
+                        74,
+                        0.60
+                    )
+                );
+
+            transform:
+                translateZ(14px);
+
+            display: inline-block;
+        }
+
+
+        @keyframes kpiRotate {
+
+            0% {
+
+                transform:
+                    rotateY(0deg)
+                    rotateX(0deg)
+                    translateY(0);
+            }
+
+
+            20% {
+
+                transform:
+                    rotateY(14deg)
+                    rotateX(6deg)
+                    translateY(-2px);
+            }
+
+
+            40% {
+
+                transform:
+                    rotateY(-14deg)
+                    rotateX(-6deg)
+                    translateY(0);
+            }
+
+
+            60% {
+
+                transform:
+                    rotateY(10deg)
+                    rotateX(4deg)
+                    translateY(-2px);
+            }
+
+
+            80% {
+
+                transform:
+                    rotateY(-7deg)
+                    rotateX(-3deg)
+                    translateY(0);
+            }
+
+
+            100% {
+
+                transform:
+                    rotateY(0deg)
+                    rotateX(0deg)
+                    translateY(0);
+            }
+        }
+
+
+        .card .label {
+
+            color: #aeb8c0;
+
+            font-size: 0.78rem;
+
+            position: relative;
+
+            z-index: 2;
+        }
+
+
+        .card .value {
+
+            font-size: 1.48rem;
+
+            font-weight: bold;
+
+            color: #ff6b4a;
+
+            margin-top: 4px;
+
+            position: relative;
+
+            z-index: 2;
+
+            text-shadow:
+                0 0 16px
+                rgba(
+                    255,
+                    107,
+                    74,
+                    0.24
+                );
+        }
+
+
+        /* =========================================================
+           ALERT BANNERS
+           ========================================================= */
+
+        .anomaly-banner {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(
+                        96,
+                        20,
+                        34,
+                        0.86
+                    ),
+                    rgba(
+                        55,
+                        15,
+                        24,
+                        0.92
+                    )
+                );
+
+            border-left:
+                4px solid
+                #ff1744;
+
+            padding:
+                14px
+                20px;
+
+            border-radius: 8px;
+
+            margin-bottom: 20px;
+
+            color: #ffb3b3;
+
+            display: none;
+
+            box-shadow:
+                0 0 24px
+                rgba(
+                    255,
+                    23,
+                    68,
+                    0.12
+                );
+        }
+
+
+        .persistent-banner {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(
+                        76,
+                        54,
+                        18,
+                        0.90
+                    ),
+                    rgba(
+                        51,
+                        37,
+                        12,
+                        0.95
+                    )
+                );
+
+            border-left:
+                4px solid
+                #f9a825;
+
+            padding:
+                14px
+                20px;
+
+            border-radius: 8px;
+
+            margin-bottom: 20px;
+
+            color: #ffd98a;
+
+            display: none;
+
+            box-shadow:
+                0 0 24px
+                rgba(
+                    249,
+                    168,
+                    37,
+                    0.12
+                );
+        }
+
+
+        /* =========================================================
+           TIMELINE CONTAINER
+           ========================================================= */
+
+        .activity-timeline {
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(
+                        30,
+                        43,
+                        54,
+                        0.98
+                    ),
+                    rgba(
+                        20,
+                        30,
+                        39,
+                        0.98
+                    )
+                );
+
+            border-radius: 11px;
+
+            padding:
+                18px
+                22px;
+
+            margin-bottom: 24px;
+
+            max-width: 700px;
+
+            border:
+                1px solid
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.05
+                );
+
+            box-shadow:
+                0 12px 28px
+                rgba(
+                    0,
+                    0,
+                    0,
+                    0.22
+                );
+        }
+
+
+        .timeline-title {
+
+            font-size: 0.9rem;
+
+            color: #aeb8c0;
+
+            margin-bottom: 12px;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 7px;
+        }
+
+
+        .timeline-row {
+
+            display: flex;
+
+            gap: 10px;
+
+            width: 100%;
+        }
+
+
+        /* =========================================================
+           DAY BOXES
+           ========================================================= */
+
+        .day-box {
+
+            flex: 1;
+
+            text-align: center;
+
+            padding:
+                12px 4px;
+
+            min-height: 66px;
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+
+            justify-content: center;
+
+            border-radius: 9px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    #2c3943,
+                    #222d35
+                );
+
+            font-size: 0.75rem;
+
+            border:
+                1px solid
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.035
+                );
+
+            position: relative;
+
+            overflow: hidden;
+
+            transition:
+                transform 0.22s ease,
+                box-shadow 0.22s ease,
+                border-color 0.22s ease;
+
+            animation:
+                dayPulse
+                2.8s
+                ease-in-out
+                infinite;
+
+            cursor: default;
+        }
+
+
+        .day-box::after {
+
+            content: "";
+
+            position: absolute;
+
+            inset: 0;
+
+            pointer-events: none;
+
+            background:
+                radial-gradient(
+                    circle at 50% 0%,
+                    rgba(
+                        255,
+                        255,
+                        255,
+                        0.06
+                    ),
+                    transparent 58%
+                );
+        }
+
+
+        .day-box:nth-child(2) {
+            animation-delay: 0.10s;
+        }
+
+        .day-box:nth-child(3) {
+            animation-delay: 0.20s;
+        }
+
+        .day-box:nth-child(4) {
+            animation-delay: 0.30s;
+        }
+
+        .day-box:nth-child(5) {
+            animation-delay: 0.40s;
+        }
+
+        .day-box:nth-child(6) {
+            animation-delay: 0.50s;
+        }
+
+        .day-box:nth-child(7) {
+            animation-delay: 0.60s;
+        }
+
+
+        @keyframes dayPulse {
+
+            0%,
+            100% {
+
+                transform:
+                    scale(1);
+            }
+
+
+            50% {
+
+                transform:
+                    scale(1.025);
+            }
+        }
+
+
+        .day-box:hover {
+
+            transform:
+                translateY(-3px)
+                scale(1.05);
+
+            border-color:
+                rgba(
+                    255,
+                    107,
+                    74,
+                    0.55
+                );
+
+            box-shadow:
+                0 0 20px
+                rgba(
+                    255,
+                    107,
+                    74,
+                    0.18
+                );
+        }
+
+
+        .day-box.detected {
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(
+                        255,
+                        107,
+                        74,
+                        0.22
+                    ),
+                    rgba(
+                        92,
+                        32,
+                        23,
+                        0.46
+                    )
+                );
+
+            border:
+                1px solid
+                #ff6b4a;
+
+            box-shadow:
+                0 0 20px
+                rgba(
+                    255,
+                    107,
+                    74,
+                    0.30
+                );
+
+            animation:
+                detectedPulse
+                1.9s
+                ease-in-out
+                infinite;
+        }
+
+
+        @keyframes detectedPulse {
+
+            0%,
+            100% {
+
+                transform:
+                    scale(1);
+
+                box-shadow:
+                    0 0 12px
+                    rgba(
+                        255,
+                        107,
+                        74,
+                        0.20
+                    );
+            }
+
+
+            50% {
+
+                transform:
+                    scale(1.065);
+
+                box-shadow:
+                    0 0 29px
+                    rgba(
+                        255,
+                        107,
+                        74,
+                        0.55
+                    );
+            }
+        }
+
+
+        /* =========================================================
+           3D CALENDAR / ACTIVITY ICON
+           ========================================================= */
+
+        .day-box .check {
+
+            font-size: 1.28rem;
+
+            line-height: 1;
+
+            display: block;
+
+            margin-bottom: 5px;
+
+            transform-style:
+                preserve-3d;
+
+            animation:
+                calendarFloat
+                3.2s
+                ease-in-out
+                infinite;
+
+            position: relative;
+
+            z-index: 2;
+
+            will-change:
+                transform;
+        }
+
+
+        .day-box:nth-child(2)
+        .check {
+
+            animation-delay:
+                0.12s;
+        }
+
+        .day-box:nth-child(3)
+        .check {
+
+            animation-delay:
+                0.24s;
+        }
+
+        .day-box:nth-child(4)
+        .check {
+
+            animation-delay:
+                0.36s;
+        }
+
+        .day-box:nth-child(5)
+        .check {
+
+            animation-delay:
+                0.48s;
+        }
+
+        .day-box:nth-child(6)
+        .check {
+
+            animation-delay:
+                0.60s;
+        }
+
+        .day-box:nth-child(7)
+        .check {
+
+            animation-delay:
+                0.72s;
+        }
+
+
+        @keyframes calendarFloat {
+
+            0%,
+            100% {
+
+                transform:
+                    rotateY(0deg)
+                    rotateX(0deg)
+                    translateY(0);
+            }
+
+
+            25% {
+
+                transform:
+                    rotateY(16deg)
+                    rotateX(8deg)
+                    translateY(-2px);
+            }
+
+
+            50% {
+
+                transform:
+                    rotateY(-18deg)
+                    rotateX(-6deg)
+                    translateY(0);
+            }
+
+
+            75% {
+
+                transform:
+                    rotateY(10deg)
+                    rotateX(5deg)
+                    translateY(-1px);
+            }
+        }
+
+
+        .day-box.detected .check {
+
+            filter:
+                drop-shadow(
+                    0 0 8px
+                    rgba(
+                        255,
+                        107,
+                        74,
+                        0.75
+                    )
+                );
+        }
+
+
+        .day-box .date {
+
+            color: #9aa3b5;
+
+            font-size: 0.68rem;
+
+            position: relative;
+
+            z-index: 2;
+        }
+
+
+        /* =========================================================
+           GRAPH
+           =========================================================
+           
+           IMPORTANT:
+           ORIGINAL GRAPH STYLING PRESERVED.
+           NO GRAPH DESIGN CHANGES.
+           ========================================================= */
+
+        #trendChart {
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(
+                        29,
+                        42,
+                        53,
+                        0.99
+                    ),
+                    rgba(
+                        20,
+                        30,
+                        39,
+                        0.99
+                    )
+                );
+
+            border-radius: 10px;
+
+            padding: 16px;
+
+            max-width: 900px;
+
+            display: block;
+
+            box-shadow:
+                0 14px 34px
+                rgba(
+                    0,
+                    0,
+                    0,
+                    0.24
+                );
+
+            border:
+                1px solid
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.045
+                );
+        }
+
+
+        #loading {
+
+            color: #aeb8c0;
+
+            margin-bottom: 10px;
+        }
+
+
+        /* =========================================================
+           RESPONSIVE
+           ========================================================= */
+
+        @media (max-width: 760px) {
+
+            body {
+
+                padding: 20px;
+            }
+
+
+            .cards {
+
+                gap: 12px;
+            }
+
+
+            .card {
+
+                min-width: 100%;
+
+                width: 100%;
+            }
+
+
+            .timeline-row {
+
+                gap: 6px;
+            }
+
+
+            .day-box {
+
+                padding:
+                    9px 2px;
+
+                min-height: 62px;
+            }
+
+
+            .kpi-icon-scene {
+
+                width: 46px;
+
+                height: 46px;
+            }
+
+
+            .kpi-icon-3d {
+
+                width: 46px;
+
+                height: 46px;
+            }
+        }
+
+
+        @media (max-width: 520px) {
+
+            h1 {
+
+                font-size: 1.3rem;
+            }
+
+
+            .subtitle {
+
+                line-height: 1.5;
+            }
+
+
+            .timeline-title {
+
+                font-size: 0.78rem;
+            }
+
+
+            .day-box .check {
+
+                font-size: 1rem;
+            }
+
+
+            .day-box .date {
+
+                font-size: 0.60rem;
+            }
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- =========================================================
+         BACK
+         ========================================================= -->
+
+    <a
+        href="/dashboard"
+        class="back-link">
+
+        ← Back to Dashboard
+
+    </a>
+
+
+    <!-- =========================================================
+         FACILITY HEADER
+         ========================================================= -->
+
+    <h1 id="facility-name">
+        Loading facility...
+    </h1>
+
+
+    <p
+        class="subtitle"
+        id="facility-meta">
+    </p>
+
+
+    <!-- =========================================================
+         KPI CARDS
+         ========================================================= -->
+
+    <div class="cards">
+
+
+        <!-- BASELINE -->
+
+        <div class="card">
+
+            <div class="card-inner">
+
+                <div class="kpi-icon-scene">
+
+                    <div class="kpi-icon-3d">
+
+                        <span
+                            class="kpi-icon-symbol">
+
+                            🔥
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="label">
+
+                        Baseline avg FRP
+
+                    </div>
+
+
+                    <div
+                        class="value"
+                        id="baseline-mean">
+
+                        --
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- HISTORICAL -->
+
+        <div class="card">
+
+            <div class="card-inner">
+
+                <div class="kpi-icon-scene">
+
+                    <div class="kpi-icon-3d">
+
+                        <span
+                            class="kpi-icon-symbol">
+
+                            📊
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="label">
+
+                        Historical samples
+
+                    </div>
+
+
+                    <div
+                        class="value"
+                        id="sample-count">
+
+                        --
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- THRESHOLD -->
+
+        <div class="card">
+
+            <div class="card-inner">
+
+                <div class="kpi-icon-scene">
+
+                    <div class="kpi-icon-3d">
+
+                        <span
+                            class="kpi-icon-symbol">
+
+                            ⚠️
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="label">
+
+                        Anomaly threshold
+
+                    </div>
+
+
+                    <div
+                        class="value"
+                        id="threshold">
+
+                        --
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         ANOMALY BANNER
+         ========================================================= -->
+
+    <div
+        class="anomaly-banner"
+        id="anomaly-banner">
+
+        ⚠️ This facility has recorded thermal readings above
+        its historical baseline — indicating a possible abnormal event.
+
+    </div>
+
+
+    <!-- =========================================================
+         PERSISTENT BANNER
+         ========================================================= -->
+
+    <div
+        class="persistent-banner"
+        id="persistent-banner">
+
+        🔥
+        <b>
+            Persistent Thermal Source
+        </b>
+        — this facility has shown heat activity on
+        <span id="persistent-days"></span>
+        of the last 7 days.
+
+    </div>
+
+
+    <!-- =========================================================
+         THERMAL ACTIVITY TIMELINE
+         ========================================================= -->
+
+    <div class="activity-timeline">
+
+        <div class="timeline-title">
+
+            📅 Thermal Activity History (last 7 days)
+
+        </div>
+
+
+        <div
+            class="timeline-row"
+            id="timeline-row">
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         LOADING
+         ========================================================= -->
+
+    <p id="loading">
+
+        Loading trend data...
+
+    </p>
+
+
+    <!-- =========================================================
+         GRAPH
+         ========================================================= -->
+
+    <canvas
+        id="trendChart"
+        height="100">
+    </canvas>
+
+
+    <!-- =========================================================
+         CHART.JS
+         ========================================================= -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js">
+    </script>
+
+
+    <script>
+
+
+        /* =========================================================
+           FACILITY ID
+           ORIGINAL LOGIC - UNCHANGED
+           ========================================================= */
+
+        const facilityId =
+            window.location.pathname.split("/").pop();
+
+
+        /* =========================================================
+           API CALL
+           ORIGINAL LOGIC - UNCHANGED
+           ========================================================= */
+
+        fetch(
+            `/api/facility/${facilityId}`
+        )
+
+            .then(
+                res => res.json()
+            )
+
+            .then(
+                data => {
+
+
+                    /* =================================================
+                       ORIGINAL PAGE DATA
+                       ================================================= */
+
+                    document
+                        .getElementById(
+                            "loading"
+                        )
+                        .style.display =
+                        "none";
+
+
+                    document
+                        .getElementById(
+                            "facility-name"
+                        )
+                        .textContent =
+                        data.facility_name
+                        ||
+                        "Unnamed facility";
+
+
+                    document
+                        .getElementById(
+                            "facility-meta"
+                        )
+                        .textContent =
+
+                        `Type: ${data.facility_type} | Region: ${data.region} | ID: ${data.facility_id}`;
+
+
+                    document
+                        .getElementById(
+                            "baseline-mean"
+                        )
+                        .textContent =
+
+                        data.baseline_mean
+                            ? data.baseline_mean.toFixed(2)
+                            : "N/A";
+
+
+                    document
+                        .getElementById(
+                            "sample-count"
+                        )
+                        .textContent =
+
+                        data.history.length;
+
+
+                    const threshold =
+
+                        data.baseline_mean
+                        &&
+                        data.baseline_std
+
+                            ? (
+                                data.baseline_mean
+                                +
+                                2 *
+                                data.baseline_std
+                              ).toFixed(2)
+
+                            : "N/A";
+
+
+                    document
+                        .getElementById(
+                            "threshold"
+                        )
+                        .textContent =
+                        threshold;
+
+
+                    /* =================================================
+                       GRAPH DATA
+                       ORIGINAL LOGIC - UNCHANGED
+                       ================================================= */
+
+                    const labels =
+                        data.history.map(
+                            h => h.acq_date
+                        );
+
+
+                    const frpValues =
+                        data.history.map(
+                            h => h.frp
+                        );
+
+
+                    /* =================================================
+                       ANOMALY LOGIC
+                       ORIGINAL - UNCHANGED
+                       ================================================= */
+
+                    const hasAnomaly =
+
+                        frpValues.some(
+
+                            v =>
+                                threshold !==
+                                "N/A"
+                                &&
+                                v >
+                                parseFloat(
+                                    threshold
+                                )
+
+                        );
+
+
+                    if (hasAnomaly) {
+
+                        document
+                            .getElementById(
+                                "anomaly-banner"
+                            )
+                            .style.display =
+                            "block";
+
+                    }
+
+
+                    /* =================================================
+                       TIMELINE
+                       ORIGINAL LOGIC - UNCHANGED
+                       ================================================= */
+
+                    const timelineRow =
+                        document
+                            .getElementById(
+                                "timeline-row"
+                            );
+
+
+                    data.activity_timeline.forEach(
+
+                        t => {
+
+                            const box =
+                                document
+                                    .createElement(
+                                        "div"
+                                    );
+
+
+                            box.className =
+
+                                "day-box"
+                                +
+                                (
+                                    t.detected
+                                        ? " detected"
+                                        : ""
+                                );
+
+
+                            const shortDate =
+                                t.date.slice(
+                                    5
+                                );
+
+
+                            box.innerHTML =
+
+                                `
+                                <span class="check">
+                                    ${t.detected ? "🔥" : "—"}
+                                </span>
+
+                                <span class="date">
+                                    ${shortDate}
+                                </span>
+                                `;
+
+
+                            timelineRow.appendChild(
+                                box
+                            );
+
+                        }
+
+                    );
+
+
+                    /* =================================================
+                       PERSISTENCE LOGIC
+                       ORIGINAL - UNCHANGED
+                       ================================================= */
+
+                    if (
+                        data.is_persistent_source
+                    ) {
+
+                        document
+                            .getElementById(
+                                "persistent-banner"
+                            )
+                            .style.display =
+                            "block";
+
+
+                        document
+                            .getElementById(
+                                "persistent-days"
+                            )
+                            .textContent =
+                            data.detected_day_count;
+
+                    }
+
+
+                    /* =================================================
+                       GRAPH CANVAS
+                       ORIGINAL - UNCHANGED
+                       ================================================= */
+
+                    const ctx =
+
+                        document
+                            .getElementById(
+                                "trendChart"
+                            )
+                            .getContext(
+                                "2d"
+                            );
+
+
+                    /* =================================================
+                       GRAPH
+                       ORIGINAL CHART CONFIG - UNCHANGED
+                       ================================================= */
+
+                    new Chart(
+                        ctx,
+                        {
+                            type: "line",
+
+                            data: {
+                                labels: labels,
+
+                                datasets: [
+                                    {
+                                        label:
+                                            "FRP (Fire Radiative Power)",
+
+                                        data:
+                                            frpValues,
+
+                                        borderColor:
+                                            "#ff6b4a",
+
+                                        backgroundColor:
+                                            "rgba(255,107,74,0.15)",
+
+                                        tension:
+                                            0.2,
+
+                                        pointRadius:
+                                            4
+                                    },
+
+                                    {
+                                        label:
+                                            "Anomaly threshold",
+
+                                        data:
+                                            labels.map(
+                                                () =>
+                                                    threshold !== "N/A"
+                                                        ? parseFloat(threshold)
+                                                        : null
+                                            ),
+
+                                        borderColor:
+                                            "#ff1744",
+
+                                        borderDash:
+                                            [6, 6],
+
+                                        pointRadius:
+                                            0
+                                    }
+                                ]
+                            },
+
+                            options: {
+                                plugins: {
+                                    legend: {
+                                        labels: {
+                                            color:
+                                                "#fff"
+                                        }
+                                    }
+                                },
+
+                                scales: {
+                                    x: {
+                                        ticks: {
+                                            color:
+                                                "#aeb8c0"
+                                        }
+                                    },
+
+                                    y: {
+                                        ticks: {
+                                            color:
+                                                "#aeb8c0"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    );
+
+                }
+            );
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,6 @@
+requests
+pandas
+python-dotenv
+geopandas
+scikit-learn
+flask

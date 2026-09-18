@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Industrial Fire Detection System</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #030405;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* =========================================================
+           HERO
+           ========================================================= */
+
+        .hero {
+            position: relative;
+            min-height: 94vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            flex-wrap: nowrap;
+            padding: 70px 20px 42px;
+
+            background-image:
+                linear-gradient(
+                    rgba(3, 4, 5, 0.35),
+                    rgba(3, 4, 5, 0.42)
+                ),
+                url("{{ url_for('static', filename='1000165048.png') }}");
+
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            overflow: hidden;
+        }
+
+        /* =========================================================
+           FIRE GLOW
+           ========================================================= */
+
+        .fire-image-glow {
+            position: absolute;
+            inset: -30px;
+            z-index: 1 !important;
+            pointer-events: none;
+
+            background-image:
+                url("{{ url_for('static', filename='1000165048.png') }}");
+
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+
+            filter:
+                brightness(2.7)
+                saturate(3.2)
+                blur(20px);
+
+            opacity: 0.40;
+
+            mix-blend-mode: screen;
+
+            transform: scale(1.04);
+
+            animation:
+                fireGlowAnimation
+                2.8s
+                ease-in-out
+                infinite;
+        }
+
+        @keyframes fireGlowAnimation {
+
+            0% {
+                opacity: 0.30;
+                filter: brightness(2.1) saturate(2.5) blur(19px);
+                transform: scale(1.03);
+            }
+
+            20% {
+                opacity: 0.38;
+                filter: brightness(2.6) saturate(3.0) blur(20px);
+                transform: scale(1.037);
+            }
+
+            40% {
+                opacity: 0.33;
+                filter: brightness(2.3) saturate(2.8) blur(19px);
+                transform: scale(1.034);
+            }
+
+            60% {
+                opacity: 0.42;
+                filter: brightness(2.8) saturate(3.3) blur(21px);
+                transform: scale(1.042);
+            }
+
+            80% {
+                opacity: 0.35;
+                filter: brightness(2.5) saturate(3.0) blur(20px);
+                transform: scale(1.037);
+            }
+
+            100% {
+                opacity: 0.30;
+                filter: brightness(2.1) saturate(2.5) blur(19px);
+                transform: scale(1.03);
+            }
+        }
+
+        /* =========================================================
+           DARK OVERLAY
+           ========================================================= */
+
+        .hero::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+
+            background:
+                radial-gradient(
+                    circle at 50% 50%,
+                    rgba(3, 5, 8, 0.02) 0%,
+                    rgba(3, 5, 8, 0.15) 45%,
+                    rgba(3, 5, 8, 0.52) 100%
+                );
+
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* =========================================================
+           BOTTOM DARK FADE
+           ========================================================= */
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 150px;
+
+            background:
+                linear-gradient(
+                    to top,
+                    rgba(3, 4, 5, 0.95),
+                    rgba(3, 4, 5, 0)
+                );
+
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* =========================================================
+           OLD FIRE EFFECTS DISABLED
+           ========================================================= */
+
+        #fire-bg { display: none !important; }
+        .fire-glow { display: none !important; }
+        .scene-svg { display: none !important; }
+
+        /* =========================================================
+           CONTENT ABOVE BACKGROUND
+           ========================================================= */
+
+        .hero > * {
+            position: relative;
+            z-index: 3;
+        }
+
+        .hero > .fire-image-glow {
+            position: absolute;
+            z-index: 1 !important;
+        }
+
+        /* =========================================================
+           THERMOGUARD AI LOGO
+           ========================================================= */
+
+        .brand-logo {
+            position: absolute;
+            top: 20px;
+            left: 36px;
+            z-index: 5;
+
+            display: flex;
+            align-items: center;
+            gap: 9px;
+
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.8px;
+            text-decoration: none;
+            white-space: nowrap;
+
+            filter: drop-shadow(0 0 10px rgba(255, 70, 35, 0.28));
+        }
+
+        .brand-logo svg {
+            width: 44px;
+            height: 50px;
+            flex-shrink: 0;
+        }
+
+        .brand-logo .brand-name { color: #f5f7fb; }
+        .brand-logo .brand-ai { color: #ff1744; margin-left: -5px; }
+
+        /* =========================================================
+           HERO DIALOGUE
+           ========================================================= */
+
+        .hero-dialogue {
+            position: absolute;
+            top: 58px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 4;
+            width: min(760px, 94vw);
+            text-align: center;
+            margin: 0;
+            font-weight: 800;
+            line-height: 1.06;
+            letter-spacing: -0.7px;
+            pointer-events: none;
+        }
+
+        .hero-dialogue .dialogue-line-1,
+        .hero-dialogue .dialogue-line-2 {
+            display: block;
+            transform: none;
+        }
+
+        .hero-dialogue .dialogue-line-1 {
+            color: #f7f9fc;
+            font-size: clamp(1.40rem, 2.55vw, 2rem);
+            text-shadow: 0 0 18px rgba(255, 255, 255, 0.18);
+        }
+
+        .hero-dialogue .dialogue-line-2 {
+            color: #ff7b32;
+            font-size: clamp(1.28rem, 2.40vw, 1.9rem);
+            margin-top: 2px;
+            text-shadow: 0 0 22px rgba(255, 91, 42, 0.36);
+        }
+
+        /* =========================================================
+           EXISTING HERO CONTENT (hidden, preserved)
+           ========================================================= */
+
+        .hero-text {
+            width: 0; height: 0; overflow: hidden; opacity: 0;
+            pointer-events: none; position: absolute;
+        }
+        .hero-text h1, .hero-text p { margin: 0; }
+
+        /* =========================================================
+           BUTTON STYLE
+           ========================================================= */
+
+        .cta-btn {
+            background: #ff6b4a;
+            color: #fff;
+            padding: 14px 36px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: 0.2s;
+            display: inline-block;
+            box-shadow: 0 0 34px rgba(255, 107, 74, 0.5);
+        }
+
+        .cta-btn:hover {
+            background: #e5502f;
+            transform: translateY(-2px);
+            box-shadow: 0 0 45px rgba(255, 107, 74, 0.75);
+        }
+
+        /* =========================================================
+           3D GLOBE
+           ========================================================= */
+
+        #globe-wrap {
+            width: 400px;
+            height: 400px;
+            flex-shrink: 0;
+            position: relative;
+            margin-top: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            filter: drop-shadow(0 0 32px rgba(36, 145, 255, 0.28));
+        }
+
+        #globe-wrap canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        .globe-caption { display: none; }
+
+        /* =========================================================
+           LIVE DASHBOARD BUTTON
+           ========================================================= */
+
+        .hero-dashboard-wrap {
+            position: relative;
+            z-index: 4;
+            margin-top: 18px;
+        }
+
+        .hero-dashboard-btn {
+            background: linear-gradient(180deg, #ff6544 0%, #ff4d22 100%);
+            color: #fff;
+            min-width: 260px;
+            padding: 13px 28px;
+            border-radius: 32px;
+            border: 1px solid rgba(255, 195, 155, 0.45);
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            box-shadow: 0 0 28px rgba(255, 76, 34, 0.62), inset 0 1px 0 rgba(255, 255, 255, 0.24);
+            transition: 0.2s;
+        }
+
+        .hero-dashboard-btn:hover {
+            background: linear-gradient(180deg, #ff754f 0%, #f45126 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 0 38px rgba(255, 76, 34, 0.78), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+        }
+
+        .dashboard-icon {
+            width: 23px; height: 23px; border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center;
+            background: rgba(255, 255, 255, 0.92);
+            color: #ff4d22; font-size: 0.9rem; font-weight: 900;
+        }
+
+        .dashboard-arrow { font-size: 1.25rem; line-height: 1; }
+
+        /* =========================================================
+           STEPS  (glow background + 3D rotating icons)
+           ========================================================= */
+
+        .steps {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            padding: 60px 20px;
+            background:
+                radial-gradient(ellipse 55% 75% at 50% 35%, rgba(255,107,74,0.20), transparent 70%),
+                #10151c;
+            overflow: hidden;
+        }
+
+        .step {
+            max-width: 220px;
+            text-align: center;
+            perspective: 700px;
+        }
+
+        .step .icon {
+            display: inline-block;
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+            animation: spin3d 4.5s linear infinite;
+            filter: drop-shadow(0 0 14px rgba(255,107,74,0.55));
+        }
+
+        @keyframes spin3d {
+            0%   { transform: rotateY(0deg); }
+            100% { transform: rotateY(360deg); }
+        }
+
+        .step h3 {
+            color: #ff6b4a;
+            margin-bottom: 8px;
+            font-size: 1.05rem;
+        }
+
+        .step p {
+            color: #aeb8c0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* =========================================================
+           STATS
+           ========================================================= */
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            flex-wrap: wrap;
+            padding: 50px 20px;
+            text-align: center;
+            background: #05070a;
+        }
+
+        .stat h2 { font-size: 2rem; color: #ff6b4a; }
+        .stat p { color: #aeb8c0; font-size: 0.9rem; }
+
+        /* =========================================================
+           ABOUT
+           ========================================================= */
+
+        .about-section {
+            text-align: center;
+            padding: 20px 20px 50px;
+            background: #05070a;
+        }
+
+        .about-btn {
+            color: #ff6b4a;
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: bold;
+            border: 1px solid #ff6b4a;
+            padding: 10px 24px;
+            border-radius: 30px;
+            display: inline-block;
+            transition: 0.2s;
+        }
+
+        .about-btn:hover {
+            background: #ff6b4a;
+            color: white;
+            box-shadow: 0 0 25px rgba(255, 107, 74, 0.45);
+        }
+
+        /* =========================================================
+           RESPONSIVE
+           ========================================================= */
+
+        @media (max-width: 900px) {
+
+            .hero {
+                min-height: 100vh;
+                flex-direction: column;
+                padding: 92px 20px 42px;
+            }
+
+            .brand-logo { top: 18px; left: 24px; font-size: 1.45rem; }
+            .brand-logo svg { width: 36px; height: 42px; }
+
+            .hero-dialogue { top: 62px; width: 94vw; }
+            .hero-dialogue .dialogue-line-1 { font-size: 1.35rem; }
+            .hero-dialogue .dialogue-line-2 { font-size: 1.25rem; }
+
+            #globe-wrap { width: 360px; height: 360px; margin-top: 18px; }
+            .hero-dashboard-wrap { margin-top: 18px; }
+        }
+
+        @media (max-width: 600px) {
+
+            .hero { padding-top: 86px; }
+
+            .brand-logo { top: 15px; left: 18px; font-size: 1.15rem; gap: 7px; }
+            .brand-logo svg { width: 30px; height: 36px; }
+
+            .hero-dialogue { top: 57px; width: 95vw; }
+            .hero-dialogue .dialogue-line-1 { font-size: 1.04rem; }
+            .hero-dialogue .dialogue-line-2 { font-size: 0.98rem; }
+
+            #globe-wrap { width: 285px; height: 285px; margin-top: 14px; }
+            .hero-dashboard-wrap { margin-top: 14px; }
+
+            .hero-dashboard-btn { min-width: 220px; padding: 12px 22px; font-size: 0.94rem; }
+        }
+
+    </style>
+</head>
+
+
+<body>
+
+    <!-- =========================================================
+         HERO
+         ========================================================= -->
+
+    <div class="hero">
+
+        <div class="fire-image-glow"></div>
+
+        <canvas id="fire-bg"></canvas>
+
+        <div class="fire-glow"></div>
+
+        <svg class="scene-svg industry-scene" viewBox="0 0 420 460">
+            <rect x="20" y="220" width="55" height="240" fill="#06090f"/>
+            <rect x="85" y="170" width="70" height="290" fill="#080b12"/>
+            <rect x="165" y="240" width="50" height="220" fill="#06090f"/>
+        </svg>
+
+
+        <!-- =====================================================
+             THERMOGUARD AI LOGO
+             ===================================================== -->
+
+        <a href="/" class="brand-logo" aria-label="ThermoGuard AI">
+
+            <svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M32 3 L57 14 V34 C57 50 47 63 32 69 C17 63 7 50 7 34 V14 Z"
+                      fill="none" stroke="#ff3f24" stroke-width="5" stroke-linejoin="round"/>
+                <path d="M32 48 C24 43 22 37 25 31 C27 27 31 24 30 17 C37 22 42 27 42 34 C42 42 38 47 32 48 Z"
+                      fill="#ff4a27"/>
+                <path d="M32 45 C28 41 28 37 30 33 C31 31 33 29 33 26 C37 30 39 33 39 37 C39 41 36 44 32 45 Z"
+                      fill="#ffd166"/>
+            </svg>
+
+            <span class="brand-name">ThermoGuard</span>
+            <span class="brand-ai">AI</span>
+
+        </a>
+
+
+        <!-- =====================================================
+             HERO DIALOGUE
+             ===================================================== -->
+
+        <div class="hero-dialogue">
+            <span class="dialogue-line-1">See the heat. Detect the threat.</span>
+            <span class="dialogue-line-2">Protect before it spreads</span>
+        </div>
+
+
+        <!-- =====================================================
+             EXISTING HERO CONTENT (preserved)
+             ===================================================== -->
+
+        <div class="hero-text">
+            <h1>🔥 Industrial Fire & Thermal Source Detection</h1>
+            <p>
+                AI-powered classification of satellite thermal hotspots —
+                separating industrial fires, gas flares, wildfires, and
+                agricultural burns using NASA FIRMS, OpenStreetMap, and
+                geospatial fusion.
+            </p>
+        </div>
+
+
+        <!-- =====================================================
+             3D GLOBE
+             ===================================================== -->
+
+        <div>
+            <div id="globe-wrap"></div>
+            <div class="globe-caption">Live thermal hotspots over India — rotating preview</div>
+        </div>
+
+
+        <!-- =====================================================
+             LIVE DASHBOARD
+             ===================================================== -->
+
+        <div class="hero-dashboard-wrap">
+            <a href="/dashboard" class="hero-dashboard-btn">
+                <span class="dashboard-icon">⌁</span>
+                <span>Live Dashboard</span>
+                <span class="dashboard-arrow">→</span>
+            </a>
+        </div>
+
+
+        <!-- =====================================================
+             OLD FOREST SVG
+             ===================================================== -->
+
+        <svg class="scene-svg forest-scene" viewBox="0 0 480 400">
+            <path d="M0,400 L0,260 L40,235 L75,265 L110,220 L150,255 L185,205 L225,245 L260,195 L300,240 L335,210 L370,250 L405,205 L440,240 L480,215 L480,400 Z"
+                  fill="#050c08"/>
+        </svg>
+
+    </div>
+
+
+    <!-- =========================================================
+         STEPS
+         ========================================================= -->
+
+    <div class="steps">
+
+        <div class="step">
+            <div class="icon">🛰️</div>
+            <h3>1. Collect</h3>
+            <p>Real-time thermal hotspots from NASA FIRMS + industrial zones from OpenStreetMap.</p>
+        </div>
+
+        <div class="step">
+            <div class="icon">🤖</div>
+            <h3>2. Classify</h3>
+            <p>Spatial fusion and rule-based AI logic label each hotspot by likely source type.</p>
+        </div>
+
+        <div class="step">
+            <div class="icon">🗺️</div>
+            <h3>3. Visualize</h3>
+            <p>Live GIS dashboard shows classified hotspots as a color-coded map overlay.</p>
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         STATS
+         ========================================================= -->
+
+    <div class="stats">
+
+        <div class="stat">
+            <h2>1,258</h2>
+            <p>Thermal hotspots analyzed</p>
+        </div>
+
+        <div class="stat">
+            <h2>26,805</h2>
+            <p>Industrial zones mapped</p>
+        </div>
+
+        <div class="stat">
+            <h2>4</h2>
+            <p>Fire source categories</p>
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         ABOUT
+         ========================================================= -->
+
+    <div class="about-section">
+        <a href="/about" class="about-btn">📖 About this system & methodology</a>
+    </div>
+
+
+    <!-- =========================================================
+         THREE.JS
+         ========================================================= -->
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+        }
+    }
+    </script>
+
+
+    <script type="module">
+
+        import * as THREE from "three";
+
+        const wrap = document.getElementById("globe-wrap");
+        const W = 430;
+        const H = 430;
+
+        const scene = new THREE.Scene();
+
+        const camera = new THREE.PerspectiveCamera(42, W / H, 0.1, 100);
+        camera.position.z = 6.2;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(W, H);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.25;
+        renderer.domElement.style.width = "100%";
+        renderer.domElement.style.height = "100%";
+        wrap.appendChild(renderer.domElement);
+
+        const globe = new THREE.Group();
+        scene.add(globe);
+
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.setCrossOrigin("anonymous");
+
+        const earthTexture = textureLoader.load("https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg");
+        const earthBump = textureLoader.load("https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-topology.png");
+        earthTexture.colorSpace = THREE.SRGBColorSpace;
+
+        const sphere = new THREE.Mesh(
+            new THREE.SphereGeometry(2.20, 96, 96),
+            new THREE.MeshPhongMaterial({
+                map: earthTexture,
+                bumpMap: earthBump,
+                bumpScale: 0.045,
+                shininess: 22,
+                specular: new THREE.Color(0x75b9ef),
+                emissive: new THREE.Color(0x061a36),
+                emissiveIntensity: 0.18
+            })
+        );
+        globe.add(sphere);
+
+        const atmosphere = new THREE.Mesh(
+            new THREE.SphereGeometry(2.28, 64, 64),
+            new THREE.MeshBasicMaterial({
+                color: 0x2299ff, transparent: true, opacity: 0.18,
+                side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false
+            })
+        );
+        globe.add(atmosphere);
+
+        const atmosphereOuter = new THREE.Mesh(
+            new THREE.SphereGeometry(2.38, 64, 64),
+            new THREE.MeshBasicMaterial({
+                color: 0x0877ff, transparent: true, opacity: 0.075,
+                side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false
+            })
+        );
+        globe.add(atmosphereOuter);
+
+        scene.add(new THREE.AmbientLight(0x6f8fbb, 1.10));
+
+        const sunLight = new THREE.DirectionalLight(0xffffff, 2.45);
+        sunLight.position.set(5, 3, 5);
+        scene.add(sunLight);
+
+        const warmLight = new THREE.PointLight(0xff6b35, 0.90, 12);
+        warmLight.position.set(-3.5, 1.0, 4);
+        scene.add(warmLight);
+
+        function latLonToVec3(lat, lon, radius) {
+            const phi = (90 - lat) * (Math.PI / 180);
+            const theta = (lon + 180) * (Math.PI / 180);
+            return new THREE.Vector3(
+                -radius * Math.sin(phi) * Math.cos(theta),
+                radius * Math.cos(phi),
+                radius * Math.sin(phi) * Math.sin(theta)
+            );
+        }
+
+        const hotspots = [
+            { lat: 22.3, lon: 70.8, anomaly: true },
+            { lat: 22.8, lon: 86.2, anomaly: true },
+            { lat: 20.9, lon: 77.7, anomaly: false },
+            { lat: 15.3, lon: 76.9, anomaly: true },
+            { lat: 17.4, lon: 78.5, anomaly: false },
+            { lat: 26.9, lon: 75.8, anomaly: false },
+            { lat: 28.6, lon: 77.2, anomaly: false },
+            { lat: 13.0, lon: 80.3, anomaly: false },
+            { lat: 19.1, lon: 73.0, anomaly: true },
+            { lat: 12.9, lon: 77.6, anomaly: false }
+        ];
+
+        const markerGroup = new THREE.Group();
+        const pulseRings = [];
+
+        hotspots.forEach(h => {
+            const pos = latLonToVec3(h.lat, h.lon, 2.235);
+            const color = h.anomaly ? 0xff1744 : 0xffb52e;
+
+            const glow = new THREE.Mesh(
+                new THREE.SphereGeometry(h.anomaly ? 0.115 : 0.085, 20, 20),
+                new THREE.MeshBasicMaterial({
+                    color: color, transparent: true, opacity: 0.24,
+                    blending: THREE.AdditiveBlending, depthWrite: false
+                })
+            );
+            glow.position.copy(pos);
+            markerGroup.add(glow);
+
+            const dot = new THREE.Mesh(
+                new THREE.SphereGeometry(h.anomaly ? 0.052 : 0.040, 16, 16),
+                new THREE.MeshBasicMaterial({ color: color })
+            );
+            dot.position.copy(pos);
+            markerGroup.add(dot);
+
+            if (h.anomaly) {
+                const ring = new THREE.Mesh(
+                    new THREE.RingGeometry(0.065, 0.086, 32),
+                    new THREE.MeshBasicMaterial({
+                        color: 0xff1744, side: THREE.DoubleSide, transparent: true,
+                        opacity: 0.90, blending: THREE.AdditiveBlending, depthWrite: false
+                    })
+                );
+                ring.position.copy(pos);
+                ring.lookAt(pos.clone().multiplyScalar(2));
+                markerGroup.add(ring);
+                pulseRings.push(ring);
+            }
+        });
+
+        globe.add(markerGroup);
+
+        const orbitGroup = new THREE.Group();
+        globe.add(orbitGroup);
+
+        function makeOrbit(radius, tilt, color, opacity, scaleY = 1) {
+            const curve = new THREE.EllipseCurve(0, 0, radius, radius * scaleY, 0, Math.PI * 2, false, 0);
+            const points = curve.getPoints(160);
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({
+                color: color, transparent: true, opacity: opacity,
+                blending: THREE.AdditiveBlending, depthWrite: false
+            });
+            const orbit = new THREE.LineLoop(geometry, material);
+            orbit.rotation.x = tilt;
+            orbit.rotation.z = 0.10;
+            orbitGroup.add(orbit);
+        }
+
+        makeOrbit(2.62, 0.88, 0xff8d21, 0.75, 0.34);
+        makeOrbit(2.48, 1.18, 0x1fa8ff, 0.45, 0.42);
+        makeOrbit(2.56, 0.58, 0x2f8cff, 0.34, 0.30);
+
+        const outerRing = new THREE.Mesh(
+            new THREE.RingGeometry(2.33, 2.37, 128),
+            new THREE.MeshBasicMaterial({
+                color: 0x39a9ff, transparent: true, opacity: 0.85,
+                side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false
+            })
+        );
+        globe.add(outerRing);
+
+        let dragging = false;
+        let lastX = 0;
+        let lastY = 0;
+        let rotY = 0.30;
+        let rotX = 0.12;
+
+        renderer.domElement.style.cursor = "grab";
+
+        renderer.domElement.addEventListener("pointerdown", e => {
+            dragging = true;
+            lastX = e.clientX;
+            lastY = e.clientY;
+            renderer.domElement.style.cursor = "grabbing";
+            renderer.domElement.setPointerCapture(e.pointerId);
+        });
+
+        renderer.domElement.addEventListener("pointerup", e => {
+            dragging = false;
+            renderer.domElement.style.cursor = "grab";
+            try { renderer.domElement.releasePointerCapture(e.pointerId); } catch (_) {}
+        });
+
+        renderer.domElement.addEventListener("pointermove", e => {
+            if (!dragging) return;
+            rotY += (e.clientX - lastX) * 0.005;
+            rotX += (e.clientY - lastY) * 0.0025;
+            rotX = Math.max(-0.45, Math.min(0.45, rotX));
+            lastX = e.clientX;
+            lastY = e.clientY;
+        });
+
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsed = clock.getElapsedTime();
+
+            if (!dragging) rotY += 0.0018;
+            globe.rotation.y = rotY;
+            globe.rotation.x = rotX;
+
+            orbitGroup.rotation.y += 0.0012;
+            orbitGroup.rotation.x = Math.sin(elapsed * 0.35) * 0.015;
+
+            pulseRings.forEach((ring, index) => {
+                const phase = elapsed * 2.5 + index * 0.7;
+                const pulse = 1 + (Math.sin(phase) + 1) * 0.35;
+                ring.scale.set(pulse, pulse, pulse);
+                ring.material.opacity = 0.38 + (Math.sin(phase) + 1) * 0.18;
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+    </script>
+
+</body>
+</html>

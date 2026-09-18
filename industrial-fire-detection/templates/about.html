@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>About & Methodology</title>
+    <meta charset="utf-8" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #0f1419; color: #fff; padding: 30px; line-height: 1.6; }
+        .back-link { color: #ff6b4a; text-decoration: none; font-size: 14px; }
+        h1 { margin: 16px 0 6px; font-size: 1.8rem; }
+        .subtitle { color: #aeb8c0; margin-bottom: 30px; font-size: 0.95rem; }
+        .container { max-width: 800px; }
+
+        .section {
+            background: #1a2530; border-radius: 10px; padding: 22px 26px;
+            margin-bottom: 20px; border-left: 4px solid #ff6b4a;
+        }
+        .section h2 { font-size: 1.15rem; color: #ff6b4a; margin-bottom: 12px; }
+        .section p { color: #cfd8dc; font-size: 0.9rem; margin-bottom: 10px; }
+        .section ul { color: #cfd8dc; font-size: 0.9rem; margin: 10px 0 10px 20px; }
+        .section li { margin-bottom: 6px; }
+
+        .section.limitation { border-left-color: #ff9800; }
+        .section.limitation h2 { color: #ff9800; }
+
+        .pipeline-step {
+            display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+            font-size: 0.9rem; color: #cfd8dc;
+        }
+        .pipeline-step .num {
+            background: #ff6b4a; color: #fff; width: 24px; height: 24px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 0.8rem; font-weight: bold; flex-shrink: 0;
+        }
+
+        .stack-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .stack-tags span {
+            background: #263038; padding: 5px 12px; border-radius: 20px;
+            font-size: 0.8rem; color: #4fc3f7;
+        }
+    </style>
+</head>
+<body>
+    <a href="/dashboard" class="back-link">← Back to Dashboard</a>
+    <h1>📊 About & Methodology</h1>
+    <p class="subtitle">How this system detects, classifies, and monitors industrial fires and thermal sources.</p>
+
+    <div class="container">
+
+        <div class="section">
+            <h2>🎯 What this system does</h2>
+            <p>NASA FIRMS detects thermal anomalies from satellite data but does not distinguish between industrial fires, gas flares, agricultural burning, and wildfires. This system takes FIRMS' raw thermal detections and classifies them by likely source, then flags abnormal spikes at known industrial facilities that may indicate accidents.</p>
+        </div>
+
+        <div class="section">
+            <h2>🔗 Data sources</h2>
+            <ul>
+                <li><b>NASA FIRMS (VIIRS)</b> — live and 60-day historical thermal hotspot data</li>
+                <li><b>OpenStreetMap</b> — industrial zone, forest, and farmland polygons across 7 major industrial regions of India</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>⚙️ Pipeline</h2>
+            <div class="pipeline-step"><span class="num">1</span> Fetch live thermal hotspots from FIRMS</div>
+            <div class="pipeline-step"><span class="num">2</span> Spatially fuse each hotspot with nearest industrial/forest/farmland zone</div>
+            <div class="pipeline-step"><span class="num">3</span> Classify into industrial fire / wildfire / agricultural burn / unclassified</div>
+            <div class="pipeline-step"><span class="num">4</span> Cross-check with a trained ML classifier for a second opinion</div>
+            <div class="pipeline-step"><span class="num">5</span> Compare industrial hotspots against each facility's 60-day historical baseline</div>
+            <div class="pipeline-step"><span class="num">6</span> Flag statistical anomalies and trigger email alerts</div>
+        </div>
+
+        <div class="section">
+            <h2>🛠️ Tech stack</h2>
+            <div class="stack-tags">
+                <span>Python</span><span>Flask</span><span>scikit-learn</span>
+                <span>GeoPandas</span><span>Leaflet.js</span><span>APScheduler</span>
+                <span>NASA FIRMS API</span><span>OSM Overpass API</span>
+            </div>
+        </div>
+
+        <div class="section limitation">
+            <h2>⚠️ Known limitations (honest disclosure)</h2>
+            <ul>
+                <li>OSM forest/farmland tagging coverage is sparse in parts of India, so some hotspots remain "unclassified" rather than misclassified</li>
+                <li>Satellite passes are not continuous — a fire that occurs between satellite passes, or under cloud cover, will not be detected until the next pass</li>
+                <li>The ML classifier was trained on our own rule-based labels, so it currently mirrors the rule-based logic rather than learning independently — its minority classes (e.g. agricultural burn) have too few samples to generalize well</li>
+                <li>Auto-refresh currently runs on a fixed interval while the app is running, not a persistent 24/7 background service</li>
+            </ul>
+        </div>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Anomaly Alerts</title>
+    <meta charset="utf-8" />
+
+    <style>
+
+        /* =========================================================
+           BASE
+           ========================================================= */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background:
+                radial-gradient(
+                    circle at 80% 75%,
+                    rgba(255, 23, 68, 0.035),
+                    transparent 35%
+                ),
+                #0f1419;
+            color: #fff;
+            padding: 30px;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+
+        /* =========================================================
+           BACK LINK
+           ========================================================= */
+
+        .back-link {
+            color: #ff6b4a;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-link:hover {
+            color: #ff947b;
+        }
+
+
+        /* =========================================================
+           TITLE AREA
+           ========================================================= */
+
+        .tg-alert-title {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-top: 16px;
+        }
+
+
+        /* =========================================================
+           3D ALERT ICON
+           ========================================================= */
+
+        .tg-alert-title-icon {
+            width: 58px;
+            height: 58px;
+
+            flex-shrink: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 15px;
+
+            background:
+                radial-gradient(
+                    circle at 35% 30%,
+                    rgba(255, 193, 7, .24),
+                    rgba(255, 23, 68, .08) 55%,
+                    rgba(0,0,0,.10)
+                );
+
+            border:
+                1px solid rgba(255, 23, 68, .42);
+
+            box-shadow:
+                0 0 18px rgba(255, 23, 68, .15),
+                inset 0 0 14px rgba(255, 120, 60, .08);
+
+            perspective: 600px;
+
+            animation:
+                tgAlertTitle3D 4s ease-in-out infinite;
+        }
+
+
+        .tg-alert-title-icon span {
+            display: block;
+
+            font-size: 29px;
+
+            filter:
+                drop-shadow(0 0 5px rgba(255, 174, 0, .85))
+                drop-shadow(0 0 10px rgba(255, 23, 68, .35));
+
+            transform-style: preserve-3d;
+        }
+
+
+        h1 {
+            margin: 0 0 6px;
+            font-size: 1.6rem;
+        }
+
+        .subtitle {
+            color: #aeb8c0;
+            margin-bottom: 24px;
+            font-size: 0.95rem;
+        }
+
+
+        /* =========================================================
+           SUMMARY BAR
+           ========================================================= */
+
+        .summary-bar {
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(74, 21, 32, .98),
+                    rgba(55, 18, 29, .92)
+                );
+
+            border-left:
+                4px solid #ff1744;
+
+            padding: 14px 20px;
+
+            border-radius: 6px;
+
+            margin-bottom: 18px;
+
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            box-shadow:
+                0 8px 20px rgba(0,0,0,.14),
+                inset 0 1px 0 rgba(255,255,255,.015);
+        }
+
+        .summary-bar .count {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #ff5252;
+        }
+
+
+        /* =========================================================
+           SEND BUTTON
+           ========================================================= */
+
+        #send-alert-btn {
+            background:
+                linear-gradient(
+                    135deg,
+                    #ff1744,
+                    #ff315a
+                );
+
+            color: #fff;
+
+            border: none;
+
+            padding: 10px 20px;
+
+            border-radius: 6px;
+
+            font-size: 14px;
+
+            font-weight: bold;
+
+            cursor: pointer;
+
+            margin-bottom: 20px;
+
+            box-shadow:
+                0 7px 18px rgba(255,23,68,.20);
+
+            transition:
+                transform .2s ease,
+                box-shadow .2s ease,
+                filter .2s ease;
+        }
+
+        #send-alert-btn:hover {
+            transform: translateY(-2px);
+
+            box-shadow:
+                0 10px 24px rgba(255,23,68,.30);
+
+            filter: brightness(1.06);
+        }
+
+        #send-alert-btn:active {
+            transform: translateY(1px) scale(.98);
+        }
+
+        #send-alert-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+
+        #send-status {
+            color: #4caf50;
+            font-size: 13px;
+            display: none;
+            margin-bottom: 16px;
+        }
+
+
+        /* =========================================================
+           LOADING
+           ========================================================= */
+
+        #loading {
+            color: #aeb8c0;
+        }
+
+        #empty {
+            color: #aeb8c0;
+            display: none;
+        }
+
+
+        /* =========================================================
+           ALERT LIST
+           ========================================================= */
+
+        .alert-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+
+            max-width: 800px;
+
+            perspective: 1400px;
+        }
+
+
+        /* =========================================================
+           ALERT CARD
+           ========================================================= */
+
+        .alert-card {
+            position: relative;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(26,37,48,.99),
+                    rgba(17,28,39,.97)
+                );
+
+            border-left:
+                4px solid #ff1744;
+
+            border-radius: 8px;
+
+            padding: 16px 20px;
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            gap: 15px;
+
+            transform-style: preserve-3d;
+
+            transform-origin: center center;
+
+            transition:
+                transform .35s cubic-bezier(.2,.8,.2,1),
+                box-shadow .35s ease,
+                background .3s ease,
+                opacity .35s ease,
+                filter .35s ease;
+
+            animation:
+                alertGlow 1.8s ease-in-out infinite;
+
+            overflow: hidden;
+
+            cursor: pointer;
+
+            z-index: 1;
+        }
+
+
+        /* =========================================================
+           CARD LIGHT SWEEP
+           ========================================================= */
+
+        .alert-card::before {
+            content: "";
+
+            position: absolute;
+
+            top: 0;
+            left: -100%;
+
+            width: 70%;
+            height: 100%;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(255,255,255,.035),
+                    transparent
+                );
+
+            transform:
+                skewX(-20deg);
+
+            transition:
+                left .65s ease;
+
+            pointer-events: none;
+        }
+
+        .alert-card:hover::before {
+            left: 140%;
+        }
+
+
+        /* =========================================================
+           3D CARD HOVER
+           ========================================================= */
+
+        .alert-card:hover {
+            transform:
+                translateY(-7px)
+                translateZ(35px)
+                rotateX(3deg)
+                rotateY(-2deg)
+                scale(1.07);
+
+            z-index: 100;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(33,47,61,.99),
+                    rgba(20,34,47,.99)
+                );
+
+            box-shadow:
+                0 24px 48px rgba(0,0,0,.48),
+                0 0 24px rgba(255,23,68,.22);
+
+            filter:
+                brightness(1.07);
+        }
+
+
+        /* Other cards move backward */
+
+        .alert-list:has(.alert-card:hover)
+        .alert-card:not(:hover) {
+            transform:
+                scale(.97)
+                translateZ(-10px);
+
+            opacity: .78;
+        }
+
+
+        /* Touch / press */
+
+        .alert-card:active {
+            transform:
+                translateY(-4px)
+                translateZ(22px)
+                rotateX(2deg)
+                scale(1.04);
+
+            z-index: 100;
+
+            box-shadow:
+                0 18px 38px rgba(0,0,0,.45),
+                0 0 20px rgba(255,23,68,.18);
+        }
+
+
+        /* =========================================================
+           ALERT LEFT CONTENT
+           ========================================================= */
+
+        .alert-left {
+            position: relative;
+
+            z-index: 4;
+
+            transform:
+                translateZ(20px);
+
+            transition:
+                transform .35s ease;
+        }
+
+
+        .alert-card:hover .alert-left {
+            transform:
+                translateZ(32px);
+        }
+
+
+        .alert-left .title {
+            font-weight: bold;
+
+            color: #ff6b4a;
+
+            margin-bottom: 4px;
+
+            line-height: 1.3;
+        }
+
+
+        .alert-left .meta {
+            color: #aeb8c0;
+
+            font-size: 0.85rem;
+
+            line-height: 1.5;
+        }
+
+
+        /* =========================================================
+           VIEW LINK
+           ========================================================= */
+
+        .view-link {
+            display: inline-block;
+
+            margin-top: 8px;
+
+            color: #4fc3f7;
+
+            text-decoration: none;
+
+            font-size: 0.85rem;
+
+            transition:
+                transform .2s ease,
+                color .2s ease;
+        }
+
+        .view-link:hover {
+            color: #8bddff;
+
+            transform:
+                translateX(3px);
+        }
+
+
+        /* =========================================================
+           RIGHT SIDE
+           ========================================================= */
+
+        .alert-right {
+            text-align: right;
+
+            position: relative;
+
+            z-index: 5;
+
+            transform:
+                translateZ(28px);
+
+            transition:
+                transform .35s ease;
+        }
+
+
+        .alert-card:hover .alert-right {
+            transform:
+                translateZ(42px);
+        }
+
+
+        /* =========================================================
+           FRP BADGE
+           ========================================================= */
+
+        .frp-badge {
+            display: inline-block;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #ff1744,
+                    #ff4264
+                );
+
+            color: #fff;
+
+            font-weight: bold;
+
+            padding: 4px 12px;
+
+            border-radius: 20px;
+
+            font-size: 0.85rem;
+
+            box-shadow:
+                0 0 12px rgba(255,23,68,.22);
+
+            transition:
+                transform .35s ease,
+                box-shadow .35s ease;
+        }
+
+
+        .alert-card:hover .frp-badge {
+            transform:
+                scale(1.14)
+                translateZ(15px);
+
+            box-shadow:
+                0 0 18px rgba(255,23,68,.42);
+        }
+
+
+        /* =========================================================
+           ALERT CARD GLOW
+           ========================================================= */
+
+        @keyframes alertGlow {
+
+            0%,
+            100% {
+                box-shadow:
+                    0 0 6px rgba(255,23,68,0.25);
+
+                border-left-color:
+                    #ff1744;
+            }
+
+            50% {
+                box-shadow:
+                    0 0 22px rgba(255,23,68,0.72),
+                    0 0 6px rgba(255,23,68,0.45) inset;
+
+                border-left-color:
+                    #ff5c7a;
+            }
+        }
+
+
+        /* =========================================================
+           TITLE 3D ROTATION
+           ========================================================= */
+
+        @keyframes tgAlertTitle3D {
+
+            0% {
+                transform:
+                    perspective(600px)
+                    rotateY(-18deg)
+                    rotateX(5deg)
+                    translateZ(0);
+            }
+
+            25% {
+                transform:
+                    perspective(600px)
+                    rotateY(0deg)
+                    rotateX(-4deg)
+                    translateZ(5px);
+            }
+
+            50% {
+                transform:
+                    perspective(600px)
+                    rotateY(18deg)
+                    rotateX(5deg)
+                    translateZ(0);
+            }
+
+            75% {
+                transform:
+                    perspective(600px)
+                    rotateY(0deg)
+                    rotateX(-4deg)
+                    translateZ(5px);
+            }
+
+            100% {
+                transform:
+                    perspective(600px)
+                    rotateY(-18deg)
+                    rotateX(5deg)
+                    translateZ(0);
+            }
+        }
+
+
+        /* =========================================================
+           MOBILE
+           ========================================================= */
+
+        @media (max-width: 700px) {
+
+            body {
+                padding: 18px;
+            }
+
+            .tg-alert-title {
+                gap: 10px;
+            }
+
+            .tg-alert-title-icon {
+                width: 46px;
+                height: 46px;
+            }
+
+            .tg-alert-title-icon span {
+                font-size: 23px;
+            }
+
+            h1 {
+                font-size: 1.4rem;
+            }
+
+            .alert-card {
+                align-items: flex-start;
+
+                padding:
+                    14px
+                    15px;
+            }
+
+            .alert-right {
+                margin-top: 2px;
+            }
+
+            .alert-left .meta {
+                font-size: .78rem;
+            }
+
+        }
+
+
+        /* =========================================================
+           TOUCH DEVICES
+           ========================================================= */
+
+        @media (hover: none) and (pointer: coarse) {
+
+            .alert-card:active {
+                transform:
+                    translateY(-5px)
+                    scale(1.05);
+
+                opacity: 1;
+
+                z-index: 100;
+            }
+
+            .alert-list:has(.alert-card:active)
+            .alert-card:not(:active) {
+                opacity: .80;
+            }
+        }
+
+
+    </style>
+</head>
+
+
+<body>
+
+
+    <!-- =========================================================
+         EXISTING BACK LINK
+         ========================================================= -->
+
+    <a
+        href="/dashboard"
+        class="back-link"
+    >
+        ← Back to Dashboard
+    </a>
+
+
+    <!-- =========================================================
+         TITLE
+         ========================================================= -->
+
+    <div class="tg-alert-title">
+
+
+        <!-- 3D ROTATING WARNING ICON -->
+
+        <div class="tg-alert-title-icon">
+
+            <span>
+                ⚠️
+            </span>
+
+        </div>
+
+
+        <div>
+
+            <h1>
+                Anomaly Alerts
+            </h1>
+
+            <p class="subtitle">
+                Facilities currently burning hotter than their historical baseline — potential accidents or abnormal events.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         SUMMARY BAR
+         ========================================================= -->
+
+    <div class="summary-bar">
+
+        <span
+            class="count"
+            id="alert-count"
+        >
+            --
+        </span>
+
+        <span>
+            active anomalies detected in the current thermal data
+        </span>
+
+    </div>
+
+
+    <!-- =========================================================
+         EXISTING SEND BUTTON
+         ========================================================= -->
+
+    <button
+        id="send-alert-btn"
+    >
+        📧 Send Email Alert to Authorities
+    </button>
+
+
+    <p
+        id="send-status"
+    ></p>
+
+
+    <!-- =========================================================
+         EXISTING LOADING
+         ========================================================= -->
+
+    <p
+        id="loading"
+    >
+        Loading alerts...
+    </p>
+
+
+    <!-- =========================================================
+         EXISTING EMPTY
+         ========================================================= -->
+
+    <p
+        id="empty"
+    >
+        ✅ No anomalies detected right now — all facilities within normal thermal range.
+    </p>
+
+
+    <!-- =========================================================
+         EXISTING ALERT LIST
+         ========================================================= -->
+
+    <div
+        class="alert-list"
+        id="alert-list"
+    ></div>
+
+
+    <!-- =========================================================
+         EXISTING JAVASCRIPT
+         OPERATION KEPT SAME
+         ========================================================= -->
+
+    <script>
+
+        /* =========================================================
+           EXISTING ALERT API
+           ========================================================= */
+
+        fetch("/api/alerts")
+
+            .then(res => res.json())
+
+            .then(data => {
+
+                document.getElementById(
+                    "loading"
+                ).style.display = "none";
+
+
+                document.getElementById(
+                    "alert-count"
+                ).textContent = data.length;
+
+
+                if (data.length === 0) {
+
+                    document.getElementById(
+                        "empty"
+                    ).style.display = "block";
+
+                    return;
+                }
+
+
+                const list =
+                    document.getElementById(
+                        "alert-list"
+                    );
+
+
+                data.forEach(item => {
+
+
+                    const card =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    card.className =
+                        "alert-card";
+
+
+                    card.innerHTML = `
+
+                        <div class="alert-left">
+
+                            <div class="title">
+                                🚨 ${
+                                    item.nearest_industrial_name !== "unnamed"
+                                    ? item.nearest_industrial_name
+                                    : "Unnamed industrial facility"
+                                }
+                            </div>
+
+                            <div class="meta">
+
+                                Type:
+                                ${item.nearest_industrial_type}
+
+                                &nbsp;|&nbsp;
+
+                                Date:
+                                ${item.acq_date}
+
+                                &nbsp;|&nbsp;
+
+                                Distance:
+                                ${Number(
+                                    item.nearest_industrial_km
+                                ).toFixed(2)} km
+
+                            </div>
+
+
+                            <a
+                                class="view-link"
+                                href="/facility/${item.facility_osm_id}"
+                            >
+                                View facility trend →
+                            </a>
+
+                        </div>
+
+
+                        <div class="alert-right">
+
+                            <span class="frp-badge">
+                                FRP ${item.frp}
+                            </span>
+
+                        </div>
+
+                    `;
+
+
+                    list.appendChild(card);
+
+                });
+
+            });
+
+
+        /* =========================================================
+           EXISTING EMAIL ALERT OPERATION
+           ========================================================= */
+
+        document
+            .getElementById("send-alert-btn")
+            .addEventListener(
+                "click",
+                () => {
+
+                    const btn =
+                        document.getElementById(
+                            "send-alert-btn"
+                        );
+
+
+                    const status =
+                        document.getElementById(
+                            "send-status"
+                        );
+
+
+                    btn.textContent =
+                        "Sending...";
+
+
+                    btn.disabled =
+                        true;
+
+
+                    fetch(
+                        "/api/send-alert",
+                        {
+                            method: "POST"
+                        }
+                    )
+
+                    .then(res => res.json())
+
+                    .then(data => {
+
+
+                        btn.textContent =
+                            "📧 Send Email Alert to Authorities";
+
+
+                        btn.disabled =
+                            false;
+
+
+                        status.style.display =
+                            "block";
+
+
+                        status.textContent =
+                            data.status === "success"
+
+                                ? "✅ " + data.message
+
+                                : "❌ " + data.message;
+
+                    });
+
+                }
+            );
+
+    </script>
+
+
+</body>
+</html>
