@@ -1483,6 +1483,30 @@
 
 
                     /* =================================================
+                       ERROR / STALE-ID HANDLING (NEW)
+                       ================================================= */
+
+                    if (data.error) {
+
+                        document
+                            .getElementById(
+                                "loading"
+                            )
+                            .textContent =
+                            "⚠️ " + data.error;
+
+                        document
+                            .getElementById(
+                                "facility-name"
+                            )
+                            .textContent =
+                            "Facility not found";
+
+                        return;
+                    }
+
+
+                    /* =================================================
                        ORIGINAL PAGE DATA
                        ================================================= */
 
@@ -1800,7 +1824,11 @@
                     );
 
                 }
-            );
+            )
+            .catch(err => {
+                document.getElementById("loading").textContent = "⚠️ " + (err.message || "Failed to load facility data");
+                document.getElementById("facility-name").textContent = "Facility not found";
+            });
 
     </script>
 

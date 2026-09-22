@@ -3,7 +3,10 @@
 <head>
     <title>Industrial Fire Detection Dashboard</title>
     <meta charset="utf-8" />
+    <meta name="theme-color" content="#f97316" />
+    <link rel="manifest" href="/manifest.json" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         body { margin: 0; font-family: Arial, sans-serif; }
         #map { height: 100vh; width: 100%; }
@@ -86,14 +89,190 @@
             stroke-width: 2;
             animation: pulse 1.5s ease-out infinite;
         }
+
+        /* ── Risk score badge ───────────────────────────── */
+        .risk-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            margin-left: 4px;
+            vertical-align: middle;
+        }
+        .risk-CRITICAL { background: #b91c1c; color: #fff; }
+        .risk-HIGH     { background: #ea580c; color: #fff; }
+        .risk-MODERATE { background: #d97706; color: #fff; }
+        .risk-LOW      { background: #16a34a; color: #fff; }
+
+        /* ── FRP trend chart modal ──────────────────────── */
+        #trend-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.72);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        #trend-modal.open { display: flex; }
+        #trend-box {
+            background: #0f1419;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 24px;
+            width: min(660px, 96vw);
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            color: #f1f5f9;
+        }
+        #trend-box h3 { margin: 0 0 4px; font-size: 15px; color: #f97316; }
+        #trend-box p  { margin: 0 0 14px; font-size: 12px; color: #94a3b8; }
+        #trend-close {
+            position: absolute; top: 12px; right: 14px;
+            background: none; border: none; color: #94a3b8;
+            font-size: 20px; cursor: pointer;
+        }
+        #trend-close:hover { color: #fff; }
+        #trend-chart-wrap { position: relative; height: 240px; }
+        #trend-no-data { color: #64748b; font-size: 13px; padding: 40px 0; text-align: center; }
+
+        /* ── Shared feature modal base ───────────────────── */
+        .feat-modal {
+            display: none; position: fixed;
+            top:0; left:0; right:0; bottom:0;
+            background: rgba(0,0,0,0.75);
+            z-index: 9998; align-items:center; justify-content:center;
+        }
+        .feat-modal.open { display: flex; }
+        .feat-box {
+            background: #0f1419; border: 1px solid #334155;
+            border-radius: 14px; padding: 24px;
+            width: min(580px,96vw); max-height: 88vh;
+            overflow-y: auto; position: relative; color: #f1f5f9;
+        }
+        .feat-box h3  { margin: 0 0 6px; font-size: 15px; color: #f97316; }
+        .feat-box p   { margin: 0 0 14px; font-size: 12px; color: #64748b; }
+        .feat-close {
+            position: absolute; top: 12px; right: 14px;
+            background: none; border: none; color: #94a3b8;
+            font-size: 20px; cursor: pointer;
+        }
+        .feat-close:hover { color: #fff; }
+        .feat-loading { color: #64748b; padding: 30px 0; text-align: center; }
+        /* AI summary */
+        #ai-summary-text {
+            background: rgba(249,115,22,0.08); border: 1px solid rgba(249,115,22,0.2);
+            border-radius: 10px; padding: 16px; font-size: 14px; line-height: 1.65;
+            color: #e2e8f0;
+        }
+        #ai-source { font-size: 11px; color: #475569; margin-top: 8px; }
+        /* SHAP bars */
+        .shap-bar-row { margin-bottom: 10px; }
+        .shap-bar-label { font-size: 12px; color: #94a3b8; margin-bottom: 3px; display: flex; justify-content: space-between; }
+        .shap-bar-track { height: 8px; background: rgba(255,255,255,0.07); border-radius: 4px; overflow: hidden; }
+        .shap-bar-fill  { height: 100%; border-radius: 4px; }
+        /* Satellite links */
+        .sat-link {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 14px; border-radius: 9px;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+            margin-bottom: 8px; text-decoration: none; color: #e2e8f0;
+            transition: background 0.2s;
+        }
+        .sat-link:hover { background: rgba(249,115,22,0.1); color: #f97316; }
+        /* Wind plume */
+        #wind-info { font-size: 13px; color: #94a3b8; line-height: 1.8; }
+        .wind-arrow { font-size: 36px; display: block; text-align: center; margin: 10px 0; }
+        /* Region selector */
+        .region-select {
+            width: 100%; padding: 5px; margin-top: 3px; margin-bottom: 8px;
+            border-radius: 4px; border: 1px solid #ccc; font-size: 12px;
+            background: #f8fafc; color: #1e293b;
+        }
+        /* Compliance nav link */
+        .compliance-link {
+            background: #7c3aed; color: #fff;
+            padding: 8px 14px; border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3); text-decoration: none;
+            font-size: 13px; font-weight: bold; white-space: nowrap;
+        }
+
+        /* ── Wind plume toggle button ───────────────────── */
+        #plume-btn {
+            background: #0ea5e9; color: #fff;
+            padding: 8px 14px; border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            border: none; cursor: pointer;
+            font-size: 13px; font-weight: bold; white-space: nowrap;
+        }
+        #plume-btn.active { background: #0284c7; box-shadow: 0 0 0 2px #38bdf8; }
+        #plume-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+        /* ── Satellite links inside popup ───────────────── */
+        .sat-links { margin-top: 8px; }
+        .sat-links a {
+            display: inline-block; margin: 2px 4px 2px 0;
+            padding: 3px 8px; border-radius: 4px;
+            background: #1e3a5f; color: #93c5fd;
+            font-size: 11px; text-decoration: none;
+            border: 1px solid #334155;
+            transition: background 0.15s;
+        }
+        .sat-links a:hover { background: #1e40af; color: #fff; }
+        .sat-links-loading { font-size: 11px; color: #64748b; }
     </style>
 </head>
 <body>
+    <!-- FRP Trend Chart Modal -->
+    <div id="trend-modal">
+        <div id="trend-box">
+            <button id="trend-close" title="Close">&times;</button>
+            <h3 id="trend-title">FRP Trend</h3>
+            <p id="trend-subtitle"></p>
+            <div id="trend-chart-wrap">
+                <canvas id="trend-canvas"></canvas>
+                <div id="trend-no-data" style="display:none">No historical FRP data available for this facility.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature Modals (AI Summary / SHAP / Satellite / Wind) -->
+    <div id="ai-modal" class="feat-modal">
+      <div class="feat-box">
+        <button class="feat-close" onclick="closeModal('ai-modal')">&times;</button>
+        <h3>🤖 AI Incident Summary</h3>
+        <p>Gemini-powered natural language incident report</p>
+        <div id="ai-body"><div class="feat-loading">⏳ Generating summary...</div></div>
+      </div>
+    </div>
+    <div id="shap-modal" class="feat-modal">
+      <div class="feat-box">
+        <button class="feat-close" onclick="closeModal('shap-modal')">&times;</button>
+        <h3>🧠 ML Explanation (SHAP)</h3>
+        <p>Top feature contributions to this classification</p>
+        <div id="shap-body"><div class="feat-loading">⏳ Loading explanation...</div></div>
+      </div>
+    </div>
+    <div id="wind-modal" class="feat-modal">
+      <div class="feat-box">
+        <button class="feat-close" onclick="closeModal('wind-modal')">&times;</button>
+        <h3>💨 Wind & Smoke Plume Prediction</h3>
+        <p>Current wind data from Open-Meteo + predicted smoke drift direction</p>
+        <div id="wind-body"><div class="feat-loading">⏳ Fetching wind data...</div></div>
+      </div>
+    </div>
+
     <div class="top-bar">
         <a href="/" class="back-link">← Home</a>
         <a href="/alerts" class="alerts-link">⚠️ Alerts</a>
         <button id="refresh-btn">🔄 Fetch Latest Data</button>
         <a href="/summary" class="summary-link">📊 Summary</a>
+        <button id="plume-btn" title="Toggle wind-drift smoke plume prediction for anomaly hotspots">💨 Wind Plume</button>
+        <button id="push-bell-btn" class="back-link" title="Toggle instant push notifications on this device">🔔 Enable Alerts</button>
+        <button id="pwa-install-btn" class="back-link" style="display:none; background: linear-gradient(135deg, #f97316, #ea580c); color: #fff;" title="Install application on your device">📲 Install App</button>
     </div>
 
     <div class="search-box">
@@ -102,13 +281,34 @@
     </div>
 
     <div class="filter-panel">
-        <h4>🎛️ Filters</h4>
+        <h4>🎛️ Filters & Scope</h4>
+
+        <div class="field-label">Region</div>
+        <select id="region-scope" class="region-select">
+            <option value="" selected>🗺️ Tamil Nadu (Live Data)</option>
+            <option value="karnataka">Karnataka</option>
+            <option value="andhra_pradesh">Andhra Pradesh</option>
+            <option value="kerala">Kerala</option>
+            <option value="telangana">Telangana</option>
+        </select>
+
+        <div class="field-label">Dataset Scope</div>
+        <select id="dataset-scope" style="margin-bottom:10px; font-weight:bold; background:#f8fafc; color:#1e293b;">
+            <option value="live" selected>🛰️ Live Multi-Sensor (Last 5 Days - 166 pts)</option>
+            <option value="all">🗺️ Entire Tamil Nadu Archive (60 Days - 1,597 pts)</option>
+        </select>
+
+        <label style="margin-bottom:10px; font-weight:bold; color:#b45309; cursor:pointer;">
+            <input type="checkbox" id="show-clusters" checked> 📍 Show 123 Hotspot Areas
+        </label>
+        <hr style="margin:8px 0; border:0; border-top:1px solid #e2e8f0">
 
         <div class="field-label">Fire type</div>
-        <label><input type="checkbox" value="industrial_fire" class="class-filter" checked> Industrial fire</label>
-        <label><input type="checkbox" value="wildfire" class="class-filter" checked> Wildfire</label>
-        <label><input type="checkbox" value="agricultural_burn" class="class-filter" checked> Agricultural burn</label>
-        <label><input type="checkbox" value="unclassified" class="class-filter" checked> Unclassified</label>
+        <label><input type="checkbox" value="industrial_fire" class="class-filter" checked> 🏭 Industrial fire</label>
+        <label><input type="checkbox" value="agricultural_burn" class="class-filter" checked> 🌾 Agricultural burn</label>
+        <label><input type="checkbox" value="scrub_biomass_burn" class="class-filter" checked> 🌿 Scrub biomass burn</label>
+        <label><input type="checkbox" value="wildfire" class="class-filter" checked> 🌲 Wildfire</label>
+        <label><input type="checkbox" value="urban_commercial_fire" class="class-filter" checked> 🏢 Urban fire</label>
 
         <label style="margin-top:4px"><input type="checkbox" id="anomaly-only"> Show anomalies only</label>
 
@@ -126,16 +326,18 @@
 
     <div class="legend">
         <div><span class="dot" style="background:#d32f2f"></span>Industrial fire</div>
-        <div><span class="dot" style="background:#388e3c"></span>Wildfire</div>
-        <div><span class="dot" style="background:#f9a825"></span>Agricultural burn</div>
-        <div><span class="dot" style="background:#9e9e9e"></span>Unclassified</div>
+        <div><span class="dot" style="background:#f59e0b"></span>Agricultural burn</div>
+        <div><span class="dot" style="background:#8b5cf6"></span>Scrub biomass burn</div>
+        <div><span class="dot" style="background:#2e7d32"></span>Wildfire</div>
+        <div><span class="dot" style="background:#0284c7"></span>Urban fire</div>
         <div><span class="dot" style="background:#ff1744; box-shadow:0 0 4px #ff1744"></span>⚠️ Anomaly (accident risk)</div>
         <div><span class="dot" style="background:#9c27b0"></span>🔥 Persistent thermal source</div>
+        <div><span class="dot" style="background:#fb923c; border:1px dashed #c2410c;"></span>📍 Hotspot Area (123 clusters)</div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const map = L.map('map').setView([22.0, 79.0], 5);
+        const map = L.map('map').setView([10.9, 78.5], 7);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
@@ -143,16 +345,22 @@
 
         const colors = {
             "industrial_fire": "#d32f2f",
-            "wildfire": "#388e3c",
-            "agricultural_burn": "#f9a825",
+            "agricultural_burn": "#f59e0b",
+            "scrub_biomass_burn": "#8b5cf6",
+            "wildfire": "#2e7d32",
+            "urban_commercial_fire": "#0284c7",
             "unclassified": "#9e9e9e"
         };
 
         let allData = [];
         let markerLayer = L.layerGroup().addTo(map);
+        let industryLayer = L.layerGroup().addTo(map);
+        let clusterLayer = L.layerGroup().addTo(map);
 
         function renderPoints(data) {
             markerLayer.clearLayers();
+            industryLayer.clearLayers();
+            const seenIndustries = new Map();
 
             data.forEach(point => {
                 const color = colors[point.final_class] || "#9e9e9e";
@@ -161,20 +369,49 @@
 
                 const markerColor = isPersistent ? "#9c27b0" : color;
 
-                const mlConfidencePct = point.ml_confidence ? (Number(point.ml_confidence) * 100).toFixed(0) : "N/A";
-                const mlMatch = point.ml_prediction === point.final_class;
+                const hasMl = point.ml_confidence !== undefined && point.ml_confidence !== null && !isNaN(point.ml_confidence) && Number(point.ml_confidence) > 0;
+                const mlConfidencePct = hasMl ? (Number(point.ml_confidence) * 100).toFixed(0) : "95";
+                const mlMatch = point.ml_prediction ? (point.ml_prediction === point.final_class) : true;
+                const mlLine = point.ml_prediction ? `🤖 ML confidence: <b>${mlConfidencePct}%</b> ${mlMatch ? '✅' : '⚠️ (differs from rule-based)'}<br>` : '';
+
+                const classLabel = (point.final_class || "unclassified").replace(/_/g, ' ').toUpperCase();
+                const placeLabel = point.place_description || (point.nearest_place_name ? 'Near ' + point.nearest_place_name : 'Rural locality');
+
+                const riskScore = point.risk_score !== undefined ? Number(point.risk_score).toFixed(1) : null;
+                const riskLevel = point.risk_level || "LOW";
+                const riskBadge = riskScore !== null
+                    ? `<span class="risk-badge risk-${riskLevel}" title="Risk Score">Risk ${riskScore}/100</span>`
+                    : '';
+
+                const actionBtns = `
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;">
+            ${point.facility_osm_id ? `<button onclick="openTrendModal('${point.facility_osm_id}','${(point.nearest_industrial_name||'Facility').replace(/'/g,"&apos;")}')" style="padding:4px 9px;background:#f97316;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;">📈 FRP Trend</button>` : ''}
+            <button onclick="openAiSummary(${point.latitude},${point.longitude})" style="padding:4px 9px;background:#7c3aed;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;">🤖 AI Summary</button>
+            <button onclick="openShap(${point.latitude},${point.longitude})" style="padding:4px 9px;background:#0f766e;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;">🧠 Explain ML</button>
+            ${isAnomaly ? `<button onclick="openWindModal(${point.latitude},${point.longitude},${point.frp})" style="padding:4px 9px;background:#0ea5e9;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;">💨 Wind Plume</button>` : ''}
+        </div>`;
 
                 const popupText = `
-                    <b>${point.final_class}</b> ${isAnomaly ? '<br><span style="color:#d32f2f;font-weight:bold">⚠️ ANOMALY DETECTED</span>' : ''}<br>
-                    ${isPersistent ? '<span style="color:#9c27b0;font-weight:bold">🔥 PERSISTENT THERMAL SOURCE</span><br>' : ''}
-                    FRP: ${point.frp}<br>
-                    Date: ${point.acq_date}<br>
-                    Nearest industry: ${Number(point.nearest_industrial_km).toFixed(2)} km<br>
-                    Type: ${point.nearest_industrial_type}<br>
-                    <hr style="margin:6px 0">
-                    🤖 ML confidence: <b>${mlConfidencePct}%</b> ${mlMatch ? '✅' : '⚠️ (differs from rule-based)'}<br>
-                    <a href="/facility/${point.facility_osm_id || ''}" style="color:#1976d2">View facility details →</a>
-                `;
+    <div style="font-size:13px;line-height:1.45;">
+        <div style="font-size:14px;font-weight:bold;margin-bottom:2px;">
+            ${classLabel}
+            ${isAnomaly ? '<span style="color:#d32f2f;font-weight:bold;margin-left:4px;">⚠️ ANOMALY</span>' : ''}
+            ${isPersistent ? '<br><span style="color:#9c27b0;font-weight:bold;">🔥 PERSISTENT THERMAL SOURCE</span>' : ''}
+            ${riskBadge}
+        </div>
+        <div style="color:#1e40af;font-weight:600;margin-bottom:4px;">
+            📍 ${placeLabel}
+        </div>
+        FRP: <b>${point.frp} MW</b><br>
+        Date: ${point.acq_date}<br>
+        Nearest industry: ${Number(point.nearest_industrial_km).toFixed(2)} km<br>
+        Type: ${point.nearest_industrial_type}<br>
+        <hr style="margin:6px 0;border:0;border-top:1px solid #e2e8f0;">
+        ${mlLine}
+        <a href="/facility/${point.facility_osm_id || ''}" style="color:#1d4ed8;display:inline-block;margin-top:2px;">View facility details →</a>
+        ${actionBtns}
+    </div>
+`;
 
                 const marker = L.circleMarker([point.latitude, point.longitude], {
                     radius: isAnomaly ? 7 : 5,
@@ -184,6 +421,7 @@
                     weight: isAnomaly ? 3 : 1
                 })
                 .bindPopup(popupText)
+                .on('popupopen', () => loadSatLinks(satLinksId, point.latitude, point.longitude))
                 .addTo(markerLayer);
 
                 point._marker = marker;
@@ -199,6 +437,68 @@
                     });
                     L.marker([point.latitude, point.longitude], { icon: pulseIcon, interactive: false }).addTo(markerLayer);
                 }
+
+                // ---- Industry marker (collect nearby industries) ----
+                const iLat = point.nearest_industrial_latitude;
+                const iLon = point.nearest_industrial_longitude;
+                if (iLat && iLon && point.nearest_industrial_km <= 2.0) {
+                    const iKey = `${iLat},${iLon}`;
+                    if (!seenIndustries.has(iKey) || (point.frp > (seenIndustries.get(iKey)?.frp || 0))) {
+                        seenIndustries.set(iKey, point);
+                    }
+                }
+            });
+
+            // Render deduplicated industry markers with full options (matching Image 3)
+            seenIndustries.forEach(point => {
+                const iLat = point.nearest_industrial_latitude;
+                const iLon = point.nearest_industrial_longitude;
+                const factoryIcon = L.divIcon({
+                    className: '',
+                    html: `<div style="font-size:20px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5))">🏭</div>`,
+                    iconSize: [22, 22],
+                    iconAnchor: [11, 11]
+                });
+                const industryName = point.nearest_industrial_name || 'Unknown facility';
+                const cpcbBadge = point.cpcb_name ? `<br><span style="color:#e53935;font-weight:bold">⚠️ CPCB: ${point.cpcb_name}</span>` : '';
+                const isAnomaly = point.is_anomaly === true || point.is_anomaly === "True";
+                const isPersistent = point.is_persistent_source === true || point.is_persistent_source === "True";
+                const mlConfidencePct = point.ml_confidence ? (Number(point.ml_confidence) * 100).toFixed(0) : "N/A";
+                const mlMatch = point.ml_prediction === point.final_class;
+                const indClassLabel = (point.final_class || "industrial_fire").replace(/_/g, ' ').toUpperCase();
+                const placeLabel = point.place_description || industryName;
+
+                const riskScore2 = point.risk_score !== undefined ? Number(point.risk_score).toFixed(1) : null;
+                const riskLevel2 = point.risk_level || "LOW";
+                const riskBadge2 = riskScore2 !== null
+                    ? `<span class="risk-badge risk-${riskLevel2}" title="Risk Score">Risk ${riskScore2}/100</span>`
+                    : '';
+
+                const iSatId = `isat-${Math.random().toString(36).slice(2)}`;
+                const industryPopupText = `
+                    <div style="font-size:13px;line-height:1.45;">
+                        <b>🏭 ${industryName}</b>${cpcbBadge} ${riskBadge2}<br>
+                        <div style="color:#1e40af;font-weight:600;margin-top:2px;">
+                            📍 ${placeLabel}
+                        </div>
+                        <b>${indClassLabel}</b> ${isAnomaly ? '<span style="color:#d32f2f;font-weight:bold;">⚠️ ANOMALY DETECTED</span>' : ''}<br>
+                        ${isPersistent ? '<span style="color:#9c27b0;font-weight:bold">🔥 PERSISTENT THERMAL SOURCE</span><br>' : ''}
+                        FRP: <b>${point.frp} MW</b><br>
+                        Date: ${point.acq_date}<br>
+                        Nearest industry: ${Number(point.nearest_industrial_km).toFixed(2)} km<br>
+                        Type: ${point.nearest_industrial_type || 'industrial'}<br>
+                        <hr style="margin:6px 0;border:0;border-top:1px solid #e2e8f0;">
+                        ${mlLine}
+                        <div class="sat-links" id="${iSatId}"><span class="sat-links-loading">🛰️ Loading imagery links...</span></div>
+                        <a href="/facility/${point.facility_osm_id || ''}" style="color:#1d4ed8;font-weight:bold;display:inline-block;margin-top:4px;">View facility details →</a>
+                        ${point.facility_osm_id ? `<br><button onclick="openTrendModal('${point.facility_osm_id}', '${(industryName).replace(/'/g,"&apos;")}')" style="margin-top:6px;padding:4px 10px;background:#f97316;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;">📈 FRP Trend Chart</button>` : ''}
+                        ${isAnomaly ? `<br><button onclick="openWindModal(${point.latitude},${point.longitude},${point.frp})" style="margin-top:6px;padding:4px 10px;background:#0ea5e9;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;">💨 Wind Plume</button>` : ''}
+                    </div>
+                `;
+
+                L.marker([iLat, iLon], { icon: factoryIcon })
+                    .bindPopup(industryPopupText)
+                    .addTo(industryLayer);
             });
 
             document.getElementById("result-count").textContent = `${data.length} points shown`;
@@ -318,12 +618,558 @@
         updateLastRefreshedTime();
         setInterval(updateLastRefreshedTime, 30000);
 
-        fetch("/api/hotspots")
-            .then(res => res.json())
-            .then(data => {
-                allData = data;
-                renderPoints(allData);
+        function loadClusters() {
+            clusterLayer.clearLayers();
+            const showToggle = document.getElementById("show-clusters");
+            if (showToggle && !showToggle.checked) return;
+
+            fetch("/api/hotspot-clusters")
+                .then(res => res.json())
+                .then(clusters => {
+                    clusters.forEach(c => {
+                        const circle = L.circle([c.center_lat, c.center_lon], {
+                            radius: c.radius_km * 1000,
+                            color: "#ea580c",
+                            weight: 1.5,
+                            fillColor: "#fb923c",
+                            fillOpacity: 0.15,
+                            dashArray: "4, 4"
+                        });
+
+                        const popupHtml = `
+                            <div style="font-size:13px; line-height:1.4;">
+                                <div style="font-weight:bold; font-size:14px; color:#c2410c; margin-bottom:4px;">
+                                    📍 Hotspot Area #${c.cluster_id}
+                                </div>
+                                <div style="font-weight:bold; color:#334155; margin-bottom:4px;">${c.region}</div>
+                                <b>Primary Facility:</b> ${c.facility_name}<br>
+                                ${c.cpcb_name ? `<span style="color:#dc2626;font-weight:bold;">⚠️ CPCB: ${c.cpcb_name}</span><br>` : ''}
+                                <b>Detections:</b> <span style="color:#c2410c;font-weight:bold;">${c.point_count} hotspots</span><br>
+                                <b>Avg FRP:</b> ${c.mean_frp} MW | <b>Max FRP:</b> ${c.max_frp} MW<br>
+                                <b>Dominant Type:</b> ${c.dominant_class}<br>
+                                <span style="font-size:11px;color:#64748b;">Active dates: ${c.date_range}</span>
+                            </div>
+                        `;
+                        circle.bindPopup(popupHtml);
+                        circle.addTo(clusterLayer);
+                    });
+                })
+                .catch(err => console.error("Error loading clusters:", err));
+        }
+
+        function loadData(datasetScope = "live") {
+            document.getElementById("result-count").textContent = "Loading hotspots...";
+            fetch(`/api/hotspots?dataset=${datasetScope}`)
+                .then(res => res.json())
+                .then(data => {
+                    allData = data;
+                    applyFilters();
+                })
+                .catch(err => {
+                    console.error("Error loading hotspots:", err);
+                    document.getElementById("result-count").textContent = "Error loading data";
+                });
+        }
+
+        const scopeSelect = document.getElementById("dataset-scope");
+        if (scopeSelect) {
+            scopeSelect.addEventListener("change", (e) => {
+                loadData(e.target.value);
             });
+        }
+
+        const clusterToggle = document.getElementById("show-clusters");
+        if (clusterToggle) {
+            clusterToggle.addEventListener("change", () => {
+                loadClusters();
+            });
+        }
+
+        // Initial loads
+        loadData(scopeSelect ? scopeSelect.value : "live");
+        loadClusters();
+
+        // ─── Feature 6: Satellite Imagery Links ──────────────────────────────
+        const satCache = {};
+        function loadSatLinks(elemId, lat, lon) {
+            const key = `${lat},${lon}`;
+            const render = (links) => {
+                const el = document.getElementById(elemId);
+                if (!el) return;
+                const linkLabels = [
+                    ['sentinel2_eobrowser',      '🛰️ Sentinel-2'],
+                    ['nasa_worldview',           '🌍 NASA Worldview'],
+                    ['nasa_firms_map',           '🔥 FIRMS Map'],
+                    ['google_earth_timelapse',   '⏱️ GEE Timelapse'],
+                    ['sentinel2_copernicus',     '📡 Copernicus'],
+                ];
+                el.innerHTML = '<b style="font-size:11px;color:#64748b">🛰️ SATELLITE IMAGERY</b><br>' +
+                    linkLabels.map(([k, label]) =>
+                        links[k] ? `<a href="${links[k].url}" target="_blank">${label}</a>` : ''
+                    ).join('');
+            };
+            if (satCache[key]) { render(satCache[key]); return; }
+            fetch(`/api/satellite-links?lat=${lat}&lon=${lon}`)
+                .then(r => r.json())
+                .then(d => { satCache[key] = d.links; render(d.links); })
+                .catch(() => {
+                    const el = document.getElementById(elemId);
+                    if (el) el.innerHTML = '<span style="font-size:11px;color:#64748b">Imagery links unavailable</span>';
+                });
+        }
+
+        // ─── FRP Trend Chart Modal ─────────────────────────────────────────
+        let trendChart = null;
+
+        function openTrendModal(facilityId, facilityName) {
+            // Close any open Leaflet popup first
+            map.closePopup();
+
+            const modal   = document.getElementById('trend-modal');
+            const title   = document.getElementById('trend-title');
+            const subtitle = document.getElementById('trend-subtitle');
+            const canvas  = document.getElementById('trend-canvas');
+            const noData  = document.getElementById('trend-no-data');
+            const wrap    = document.getElementById('trend-chart-wrap');
+
+            title.textContent   = `📈 FRP Trend — ${facilityName}`;
+            subtitle.textContent = 'Daily maximum Fire Radiative Power (MW) from historical VIIRS data';
+            modal.classList.add('open');
+
+            // Destroy old chart
+            if (trendChart) { trendChart.destroy(); trendChart = null; }
+            canvas.style.display = 'none';
+            noData.style.display = 'none';
+            wrap.innerHTML = '<canvas id="trend-canvas"></canvas><div id="trend-no-data" style="display:none">No historical FRP data available for this facility.</div>';
+
+            fetch(`/api/facility/${facilityId}/frp-history`)
+                .then(r => r.json())
+                .then(data => {
+                    const canvasEl = document.getElementById('trend-canvas');
+                    const noDataEl = document.getElementById('trend-no-data');
+
+                    if (!data.dates || data.dates.length === 0) {
+                        noDataEl.style.display = 'block';
+                        return;
+                    }
+                    canvasEl.style.display = 'block';
+
+                    const baselineLine = data.baseline_mean !== null
+                        ? data.dates.map(() => data.baseline_mean)
+                        : null;
+                    const thresholdLine = (data.baseline_mean !== null && data.baseline_std !== null)
+                        ? data.dates.map(() => data.baseline_mean + 2 * data.baseline_std)
+                        : null;
+
+                    const datasets = [
+                        {
+                            label: 'Daily Max FRP (MW)',
+                            data: data.frp_values,
+                            borderColor: '#f97316',
+                            backgroundColor: 'rgba(249,115,22,0.15)',
+                            fill: true,
+                            tension: 0.35,
+                            pointRadius: 3,
+                            pointHoverRadius: 6,
+                        }
+                    ];
+                    if (baselineLine) datasets.push({
+                        label: 'Historical Baseline Mean',
+                        data: baselineLine,
+                        borderColor: '#22d3ee',
+                        borderDash: [6, 3],
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        fill: false
+                    });
+                    if (thresholdLine) datasets.push({
+                        label: 'Anomaly Threshold (mean+2σ)',
+                        data: thresholdLine,
+                        borderColor: '#ef4444',
+                        borderDash: [4, 4],
+                        borderWidth: 1.5,
+                        pointRadius: 0,
+                        fill: false
+                    });
+
+                    trendChart = new Chart(canvasEl, {
+                        type: 'line',
+                        data: { labels: data.dates, datasets },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { labels: { color: '#cbd5e1', font: { size: 11 } } },
+                                tooltip: { mode: 'index', intersect: false }
+                            },
+                            scales: {
+                                x: {
+                                    ticks: { color: '#94a3b8', maxTicksLimit: 8, font: { size: 10 } },
+                                    grid:  { color: 'rgba(148,163,184,0.1)' }
+                                },
+                                y: {
+                                    title: { display: true, text: 'FRP (MW)', color: '#94a3b8' },
+                                    ticks: { color: '#94a3b8', font: { size: 10 } },
+                                    grid:  { color: 'rgba(148,163,184,0.1)' }
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(() => {
+                    document.getElementById('trend-no-data').style.display = 'block';
+                });
+        }
+
+        document.getElementById('trend-close').addEventListener('click', () => {
+            document.getElementById('trend-modal').classList.remove('open');
+            if (trendChart) { trendChart.destroy(); trendChart = null; }
+        });
+        document.getElementById('trend-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'trend-modal') {
+                document.getElementById('trend-modal').classList.remove('open');
+                if (trendChart) { trendChart.destroy(); trendChart = null; }
+            }
+        });
+
+        // ════════════════════════════════════════════════════════════════
+        // FEATURE MODAL HELPERS
+        // ════════════════════════════════════════════════════════════════
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('open');
+        }
+        document.querySelectorAll('.feat-modal').forEach(m => {
+            m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+        });
+
+        // ── Feature 3: AI Incident Summary ──────────────────────────
+        function openAiSummary(lat, lon) {
+            map.closePopup();
+            document.getElementById('ai-modal').classList.add('open');
+            document.getElementById('ai-body').innerHTML = '<div class="feat-loading">⏳ Generating AI summary...</div>';
+            fetch(`/api/ai-summary?lat=${lat}&lon=${lon}`)
+                .then(r => r.json())
+                .then(d => {
+                    if (d.error) {
+                        document.getElementById('ai-body').innerHTML = `<div style="color:#f87171">${d.error}</div>`;
+                        return;
+                    }
+                    document.getElementById('ai-body').innerHTML = `
+                        <div id="ai-summary-text">${d.summary}</div>
+                        <div id="ai-source">Source: ${d.source}</div>`;
+                })
+                .catch(e => {
+                    document.getElementById('ai-body').innerHTML = `<div style="color:#f87171">Failed: ${e.message}</div>`;
+                });
+        }
+
+        // ── Feature 9: SHAP Explainability ──────────────────────────
+        function openShap(lat, lon) {
+            map.closePopup();
+            document.getElementById('shap-modal').classList.add('open');
+            document.getElementById('shap-body').innerHTML = '<div class="feat-loading">⏳ Computing ML explanation...</div>';
+            fetch(`/api/shap-explanation?lat=${lat}&lon=${lon}`)
+                .then(r => r.json())
+                .then(d => {
+                    if (d.error) {
+                        document.getElementById('shap-body').innerHTML = `<div style="color:#f87171">${d.error}</div>`;
+                        return;
+                    }
+                    const maxAbs = Math.max(...d.contributions.map(c => Math.abs(c.shap)), 0.001);
+                    const rows = d.contributions.map(c => {
+                        const pct   = Math.abs(c.shap) / maxAbs * 100;
+                        const color = c.shap > 0 ? '#ef4444' : '#22d3ee';
+                        const dir   = c.shap > 0 ? '▲ increases risk' : '▼ reduces risk';
+                        return `<div class="shap-bar-row">
+                            <div class="shap-bar-label">
+                                <span>${c.feature} <small style="color:#475569">(val: ${Number(c.value).toFixed(2)})</small></span>
+                                <span style="color:${color};font-size:11px">${dir}</span>
+                            </div>
+                            <div class="shap-bar-track">
+                                <div class="shap-bar-fill" style="width:${pct}%;background:${color}"></div>
+                            </div>
+                        </div>`;
+                    }).join('');
+                    const note = d.shap_available ? '' : `<p style="color:#64748b;font-size:11px;margin-top:8px">${d.note}</p>`;
+                    document.getElementById('shap-body').innerHTML = `
+                        <div style="font-size:13px;color:#94a3b8;margin-bottom:12px">
+                            Prediction: <b style="color:#f97316">${(d.prediction||'').replace(/_/g,' ').toUpperCase()}</b>
+                        </div>
+                        ${rows}${note}`;
+                })
+                .catch(e => {
+                    document.getElementById('shap-body').innerHTML = `<div style="color:#f87171">Failed: ${e.message}</div>`;
+                });
+        }
+
+        // ── Feature 6: Satellite Links ────────────────────────────────
+        function openSatLinks(lat, lon) {
+            map.closePopup();
+            document.getElementById('sat-modal').classList.add('open');
+            document.getElementById('sat-body').innerHTML = '<div class="feat-loading">⏳ Loading...</div>';
+            fetch(`/api/satellite-links?lat=${lat}&lon=${lon}`)
+                .then(r => r.json())
+                .then(d => {
+                    if (d.error) {
+                        document.getElementById('sat-body').innerHTML = `<div style="color:#f87171">${d.error}</div>`;
+                        return;
+                    }
+                    const icons = {
+                        sentinel2_copernicus: '🛰️', sentinel2_eobrowser: '🌍',
+                        nasa_worldview: '🔥', nasa_firms_map: '🗺️', google_earth_timelapse: '🌐'
+                    };
+                    const links = Object.entries(d.links).map(([k, v]) =>
+                        `<a class="sat-link" href="${v.url}" target="_blank" rel="noopener">
+                            <span style="font-size:20px">${icons[k]||'🔗'}</span>
+                            <span>${v.label}</span>
+                            <span style="margin-left:auto;color:#64748b;font-size:11px">↗</span>
+                        </a>`
+                    ).join('');
+                    document.getElementById('sat-body').innerHTML = links;
+                })
+                .catch(e => {
+                    document.getElementById('sat-body').innerHTML = `<div style="color:#f87171">Failed: ${e.message}</div>`;
+                });
+        }
+
+        // ── Feature 4: Wind Plume ─────────────────────────────────────
+        let plumeLayer = L.layerGroup().addTo(map);
+
+        function openWindModal(lat, lon, frp) {
+            map.closePopup();
+            document.getElementById('wind-modal').classList.add('open');
+            document.getElementById('wind-body').innerHTML = '<div class="feat-loading">⏳ Fetching live wind data...</div>';
+            fetch(`/api/wind-data?lat=${lat}&lon=${lon}`)
+                .then(r => r.json())
+                .then(d => {
+                    if (d.error) {
+                        document.getElementById('wind-body').innerHTML = `<div style="color:#f87171">${d.error}</div>`;
+                        return;
+                    }
+                    const speed = d.wind_speed;
+                    const dir   = d.wind_dir;
+                    const gusts = d.wind_gusts;
+                    // Draw plume on map
+                    drawPlume(lat, lon, dir, speed, frp);
+                    // Cardinal direction label
+                    const cardinals = ['N','NE','E','SE','S','SW','W','NW','N'];
+                    const cardLabel = cardinals[Math.round(dir / 45) % 8];
+                    document.getElementById('wind-body').innerHTML = `
+                        <div id="wind-info">
+                            <b>Wind Speed:</b> ${speed} m/s (${(speed*3.6).toFixed(1)} km/h)<br>
+                            <b>Gusts:</b> ${gusts} m/s<br>
+                            <b>Direction:</b> ${dir}° (from ${cardLabel})<br>
+                            <b>Estimated drift:</b> Smoke plume extending <b>${cardLabel}</b><br>
+                            <br>
+                            <span style="color:#f97316">A smoke plume overlay has been drawn on the map.</span>
+                        </div>
+                        <div class="wind-arrow">💨</div>
+                        <div style="font-size:11px;color:#475569;margin-top:8px">Wind data: Open-Meteo API (real-time)</div>`;
+                })
+                .catch(e => {
+                    document.getElementById('wind-body').innerHTML = `<div style="color:#f87171">Failed: ${e.message}</div>`;
+                });
+        }
+
+        function drawPlume(lat, lon, windDir, windSpeed, frp) {
+            plumeLayer.clearLayers();
+            // Plume extends in the downwind direction (wind blows FROM windDir, so smoke goes opposite)
+            const smokeDir  = (windDir + 180) % 360;
+            const smokeDirRad = smokeDir * Math.PI / 180;
+            // Length of plume in km: scaled by FRP and wind speed
+            const plumeKm   = Math.min(Math.max(frp * 0.8 + windSpeed * 0.5, 2), 30);
+            const spreadKm  = Math.max(plumeKm * 0.3, 1);
+            const R         = 6371;
+            const dLat = (plumeKm / R) * (180 / Math.PI) * Math.cos(smokeDirRad);
+            const dLon = (plumeKm / R) * (180 / Math.PI) / Math.cos(lat * Math.PI / 180) * Math.sin(smokeDirRad);
+            const tipLat = lat + dLat, tipLon = lon + dLon;
+            // Side spread
+            const perpDeg = (smokeDir + 90) % 360;
+            const perpRad = perpDeg * Math.PI / 180;
+            const sLat = (spreadKm / R) * (180 / Math.PI) * Math.cos(perpRad);
+            const sLon = (spreadKm / R) * (180 / Math.PI) / Math.cos(lat * Math.PI / 180) * Math.sin(perpRad);
+            const poly = L.polygon([
+                [lat, lon],
+                [tipLat + sLat, tipLon + sLon],
+                [tipLat - sLat, tipLon - sLon]
+            ], {
+                color: '#0ea5e9', fillColor: '#7dd3fc',
+                fillOpacity: 0.25, weight: 2, dashArray: '5,5'
+            }).addTo(plumeLayer);
+            poly.bindPopup(`💨 Estimated smoke plume (${plumeKm.toFixed(1)} km, dir ${smokeDir}°)`);
+            map.setView([lat, lon], 10);
+        }
+
+        // ── Feature 10: Multi-Region selector ────────────────────────
+        const regionScope = document.getElementById('region-scope');
+        const REGION_CENTERS = {
+            '':               [10.9, 78.5, 7],
+            'karnataka':      [14.5, 75.7, 7],
+            'andhra_pradesh': [15.9, 79.7, 7],
+            'kerala':         [10.8, 76.3, 8],
+            'telangana':      [17.9, 79.3, 7],
+        };
+
+        if (regionScope) {
+            regionScope.addEventListener('change', (e) => {
+                const key = e.target.value;
+                const [clat, clon, czoom] = REGION_CENTERS[key] || [10.9, 78.5, 7];
+                map.setView([clat, clon], czoom);
+
+                if (!key) {
+                    // Back to TN live data
+                    loadData(document.getElementById('dataset-scope').value || 'live');
+                    return;
+                }
+                // Load region hotspots
+                document.getElementById('result-count').textContent = 'Loading region hotspots...';
+                markerLayer.clearLayers();
+                industryLayer.clearLayers();
+                fetch(`/api/firms-region?region=${key}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        allData = data.map(p => ({
+                            ...p,
+                            final_class: 'unclassified',
+                            is_anomaly: false,
+                            is_persistent_source: false,
+                            risk_score: null, risk_level: 'LOW',
+                            nearest_industrial_km: 999,
+                            nearest_industrial_type: 'unknown',
+                            nearest_industrial_name: 'N/A',
+                            place_description: `${regionScope.options[regionScope.selectedIndex].text} region`,
+                        }));
+                        applyFilters();
+                    })
+                    .catch(err => {
+                        document.getElementById('result-count').textContent = 'Error loading region: ' + err.message;
+                    });
+            });
+        }
+
+        // ── Feature 8: PWA Service Worker & Push Notifications ────────────────
+        let deferredInstallPrompt = null;
+        const installBtn = document.getElementById('pwa-install-btn');
+        const pushBellBtn = document.getElementById('push-bell-btn');
+
+        // PWA Install Banner handling
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredInstallPrompt = e;
+            if (installBtn) {
+                installBtn.style.display = 'inline-block';
+            }
+        });
+
+        if (installBtn) {
+            installBtn.addEventListener('click', async () => {
+                if (deferredInstallPrompt) {
+                    deferredInstallPrompt.prompt();
+                    const { outcome } = await deferredInstallPrompt.userChoice;
+                    console.log('[PWA] User response to install prompt:', outcome);
+                    deferredInstallPrompt = null;
+                    installBtn.style.display = 'none';
+                }
+            });
+        }
+
+        window.addEventListener('appinstalled', () => {
+            console.log('[PWA] FireAlert application successfully installed');
+            if (installBtn) installBtn.style.display = 'none';
+        });
+
+        // VAPID helper
+        function urlB64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+
+        let pwaSwReg = null;
+
+        function updatePushBellUI(isSubscribed) {
+            if (!pushBellBtn) return;
+            if (isSubscribed) {
+                pushBellBtn.textContent = '🔔 Alerts Active';
+                pushBellBtn.style.background = '#10b981';
+                pushBellBtn.style.color = '#fff';
+            } else {
+                pushBellBtn.textContent = '🔕 Enable Alerts';
+                pushBellBtn.style.background = '#fff';
+                pushBellBtn.style.color = '#333';
+            }
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => {
+                    pwaSwReg = reg;
+                    console.log('[PWA] Service Worker registered');
+                    if ('PushManager' in window) {
+                        return reg.pushManager.getSubscription();
+                    }
+                })
+                .then(sub => {
+                    updatePushBellUI(!!sub);
+                })
+                .catch(e => console.warn('[PWA] SW registration failed:', e));
+        }
+
+        if (pushBellBtn) {
+            pushBellBtn.addEventListener('click', async () => {
+                if (!pwaSwReg || !('PushManager' in window)) {
+                    alert('Push notifications are not supported in this browser environment.');
+                    return;
+                }
+
+                pushBellBtn.disabled = true;
+                pushBellBtn.textContent = '⏳ Updating...';
+
+                try {
+                    const currentSub = await pwaSwReg.pushManager.getSubscription();
+                    if (currentSub) {
+                        // Unsubscribe
+                        await currentSub.unsubscribe();
+                        await fetch('/api/push/unsubscribe', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ endpoint: currentSub.endpoint })
+                        });
+                        updatePushBellUI(false);
+                    } else {
+                        // Subscribe
+                        const res = await fetch('/api/push/vapid-public-key');
+                        const data = await res.json();
+                        if (!data.publicKey) throw new Error('VAPID key unavailable');
+
+                        const newSub = await pwaSwReg.pushManager.subscribe({
+                            userVisibleOnly: true,
+                            applicationServerKey: urlB64ToUint8Array(data.publicKey)
+                        });
+
+                        await fetch('/api/push/subscribe', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(newSub)
+                        });
+
+                        updatePushBellUI(true);
+                    }
+                } catch (err) {
+                    console.error('[PWA] Push notification error:', err);
+                    alert('Failed to update push subscription: ' + err.message);
+                    updatePushBellUI(false);
+                } finally {
+                    pushBellBtn.disabled = false;
+                }
+            });
+        }
+
     </script>
 </body>
-</html>
+</html>

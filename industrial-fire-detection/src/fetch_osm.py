@@ -11,17 +11,11 @@ HEADERS = {
     "User-Agent": "SIH-Industrial-Fire-Detection/1.0"
 }
 
-# Major Indian industrial regions (south, west, north, east)
-# Covers key clusters: Gujarat, Maharashtra, Jharkhand/Odisha (steel belt),
-# Andhra/Vizag, Tamil Nadu, Rajasthan, UP/NCR
 REGIONS = {
-    "gujarat": (20.0, 68.0, 24.5, 74.5),
-    "maharashtra": (15.5, 72.5, 22.0, 80.5),
-    "jharkhand_odisha": (17.5, 82.0, 25.5, 87.5),
-    "andhra_telangana": (12.5, 76.5, 19.5, 84.5),
-    "tamil_nadu": (8.0, 76.5, 13.5, 80.5),
-    "rajasthan": (23.0, 69.0, 30.0, 78.5),
-    "up_ncr": (25.5, 76.5, 30.5, 84.5),
+    "tn_north":   (12.5, 79.0, 13.6, 80.4),
+    "tn_west":    (10.5, 76.8, 12.5, 78.6),
+    "tn_central": (9.5, 78.0, 12.5, 79.8),
+    "tn_south":   (8.0, 77.0, 9.5, 79.0),
 }
 
 def build_query(bbox):

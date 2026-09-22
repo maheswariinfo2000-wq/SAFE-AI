@@ -7,40 +7,53 @@ from dotenv import load_dotenv
 load_dotenv()
 API_KEY = os.getenv("FIRMS_API_KEY")
 
-# India bounding box (min_lon, min_lat, max_lon, max_lat)
-BBOX = "68,6,97,37"
+#tamil nadu only
+BBOX = "76.2,8.0,80.4,13.6"
 
-# Satellite source - VIIRS gives better resolution (375m) than MODIS
-SOURCE = "VIIRS_SNPP_NRT"
+# Satellite sources - VIIRS gives high resolution (375m)
+# Querying all 3 operational VIIRS satellites (SNPP, NOAA-20, NOAA-21) provides complete coverage
+SOURCES = ["VIIRS_NOAA20_NRT", "VIIRS_NOAA21_NRT", "VIIRS_SNPP_NRT"]
 
-# Number of days of data to fetch (max 10 for near-real-time)
-DAYS = 3
+# Number of days of data to fetch (max 5 for NASA FIRMS area API)
+DAYS = 5
 
 def fetch_firms_data():
     if not API_KEY:
         print("ERROR: FIRMS_API_KEY not found. Check your .env file.")
         return None
 
-    url = f"https://firms.modaps.eosdis.nasa.gov/api/area/csv/{API_KEY}/{SOURCE}/{BBOX}/{DAYS}"
+    all_dfs = []
+    for source in SOURCES:
+        url = f"https://firms.modaps.eosdis.nasa.gov/api/area/csv/{API_KEY}/{source}/{BBOX}/{DAYS}"
+        print(f"Fetching data from FIRMS API for {source}...")
+        try:
+            response = requests.get(url, timeout=15)
+            response.raise_for_status()
+            from io import StringIO
+            df_src = pd.read_csv(StringIO(response.text))
+            if len(df_src) > 0 and "latitude" in df_src.columns:
+                print(f"  -> Got {len(df_src)} records from {source}")
+                all_dfs.append(df_src)
+            else:
+                print(f"  -> No data returned for {source}")
+        except Exception as e:
+            print(f"  -> Warning: failed to fetch {source}: {e}")
 
-    print("Fetching data from FIRMS API...")
-    response = requests.get(url)
-    response.raise_for_status()
+    if not all_dfs:
+        print("ERROR: No data fetched from any FIRMS source.")
+        return None
 
-    # Save raw CSV
+    combined_df = pd.concat(all_dfs, ignore_index=True)
+    # Deduplicate matching detections
+    dedup_cols = [c for c in ["latitude", "longitude", "acq_date", "acq_time"] if c in combined_df.columns]
+    combined_df.drop_duplicates(subset=dedup_cols, inplace=True)
+
     output_path = "data/raw/firms_hotspots.csv"
-    with open(output_path, "w") as f:
-        f.write(response.text)
-
-    # Load into pandas to verify
-    df = pd.read_csv(output_path)
-    print(f"Fetched {len(df)} hotspot records")
+    combined_df.to_csv(output_path, index=False)
+    print(f"\nTotal combined & deduplicated hotspot records: {len(combined_df)}")
     print(f"Saved to: {output_path}")
-    print("\nSample data:")
-    print(df.head())
-    print("\nColumns:", list(df.columns))
 
-    return df
+    return combined_df
 
 if __name__ == "__main__":
     fetch_firms_data()

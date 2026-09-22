@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Facility Compliance Dashboard — TN Fire Monitor</title>
+    <meta name="description" content="Industrial facility compliance ratings, fire frequency, and risk scores for Tamil Nadu" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at 50% 0%, rgba(249,115,22,0.06), transparent 40%), #0a0f1a;
+            color: #e2e8f0;
+            min-height: 100vh;
+            padding: 0 0 60px;
+        }
+
+        /* ── Header ────────────────────────────────────── */
+        header {
+            background: linear-gradient(135deg, #0f1419 0%, #1a2235 100%);
+            border-bottom: 1px solid rgba(249,115,22,0.2);
+            padding: 18px 32px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            position: sticky; top: 0; z-index: 100;
+        }
+        header .logo { font-size: 22px; }
+        header h1 { font-size: 20px; font-weight: 700; color: #f97316; }
+        header p  { font-size: 12px; color: #64748b; margin-top: 2px; }
+        .nav-links { margin-left: auto; display: flex; gap: 12px; }
+        .nav-links a {
+            padding: 7px 16px; border-radius: 8px; text-decoration: none;
+            font-size: 13px; font-weight: 500;
+            background: rgba(255,255,255,0.06); color: #94a3b8;
+            transition: all 0.2s;
+        }
+        .nav-links a:hover { background: rgba(249,115,22,0.15); color: #f97316; }
+        .nav-links a.active { background: rgba(249,115,22,0.2); color: #f97316; }
+
+        /* ── Summary cards ──────────────────────────────── */
+        .summary-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            padding: 28px 32px 0;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 18px 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: var(--accent, #f97316);
+        }
+        .stat-card .label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.8px; }
+        .stat-card .value { font-size: 28px; font-weight: 800; color: var(--accent, #f97316); margin: 6px 0 2px; }
+        .stat-card .sub   { font-size: 11px; color: #475569; }
+
+        /* ── Charts row ─────────────────────────────────── */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 24px 32px 0;
+        }
+        .chart-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px;
+            padding: 20px;
+        }
+        .chart-card h3 { font-size: 13px; color: #94a3b8; margin-bottom: 14px; }
+        .chart-card canvas { height: 200px !important; }
+
+        /* ── Toolbar ────────────────────────────────────── */
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 24px 32px 0;
+            flex-wrap: wrap;
+        }
+        .toolbar h2 { font-size: 16px; font-weight: 700; color: #f1f5f9; margin-right: auto; }
+        .search-input {
+            padding: 9px 14px; border-radius: 9px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: #e2e8f0; font-size: 13px; width: 220px;
+        }
+        .filter-btn {
+            padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.05); color: #94a3b8; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-btn.active-nc { background: rgba(185,28,28,0.2); color: #f87171; border-color: #b91c1c; }
+        .filter-btn.active-w  { background: rgba(217,119,6,0.2);  color: #fbbf24; border-color: #d97706; }
+        .filter-btn.active-c  { background: rgba(22,163,74,0.2);  color: #4ade80; border-color: #16a34a; }
+
+        /* ── Table ──────────────────────────────────────── */
+        .table-wrap {
+            padding: 16px 32px 0;
+            overflow-x: auto;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        thead th {
+            padding: 12px 14px; text-align: left;
+            background: rgba(255,255,255,0.04);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            color: #64748b; font-weight: 600; font-size: 11px;
+            text-transform: uppercase; letter-spacing: 0.6px;
+            cursor: pointer; white-space: nowrap;
+            user-select: none;
+        }
+        thead th:hover { color: #f97316; }
+        tbody tr {
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            transition: background 0.15s;
+        }
+        tbody tr:hover { background: rgba(249,115,22,0.05); }
+        tbody td { padding: 13px 14px; vertical-align: middle; }
+
+        /* ── Badges ─────────────────────────────────────── */
+        .badge {
+            display: inline-block; padding: 3px 10px;
+            border-radius: 20px; font-size: 11px; font-weight: 700;
+            letter-spacing: 0.5px; white-space: nowrap;
+        }
+        .badge-NC { background: rgba(185,28,28,0.25); color: #fca5a5; border: 1px solid rgba(185,28,28,0.4); }
+        .badge-W  { background: rgba(217,119,6,0.25);  color: #fde68a; border: 1px solid rgba(217,119,6,0.4); }
+        .badge-C  { background: rgba(22,163,74,0.25);  color: #86efac; border: 1px solid rgba(22,163,74,0.4); }
+
+        .risk-pill {
+            display: inline-block; padding: 3px 8px; border-radius: 10px;
+            font-size: 11px; font-weight: 700;
+        }
+        .risk-CRITICAL { background:#b91c1c; color:#fff; }
+        .risk-HIGH     { background:#ea580c; color:#fff; }
+        .risk-MODERATE { background:#d97706; color:#fff; }
+        .risk-LOW      { background:#16a34a; color:#fff; }
+
+        .frp-bar {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .frp-bar-inner {
+            height: 6px; border-radius: 3px;
+            background: linear-gradient(90deg, #f97316, #ef4444);
+            min-width: 4px;
+        }
+
+        .facility-link { color: #60a5fa; text-decoration: none; font-weight: 500; }
+        .facility-link:hover { color: #93c5fd; text-decoration: underline; }
+
+        .days-badge {
+            display: inline-block; padding: 2px 8px; border-radius: 8px;
+            font-size: 11px; background: rgba(255,255,255,0.06); color: #94a3b8;
+        }
+
+        /* ── Loading / empty ────────────────────────────── */
+        .loading { text-align: center; padding: 80px; color: #475569; font-size: 14px; }
+        #row-count { font-size: 12px; color: #475569; padding: 10px 32px 0; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">🏭</div>
+    <div>
+        <h1>Facility Compliance Dashboard</h1>
+        <p>Industrial fire frequency · risk scores · regulatory compliance ratings</p>
+    </div>
+    <nav class="nav-links">
+        <a href="/">🏠 Home</a>
+        <a href="/dashboard">🗺️ Map</a>
+        <a href="/alerts">⚠️ Alerts</a>
+        <a href="/summary">📊 Summary</a>
+        <a href="/compliance" class="active">🏭 Compliance</a>
+    </nav>
+</header>
+
+<!-- Summary cards -->
+<div class="summary-strip" id="summary-strip">
+    <div class="stat-card" style="--accent:#ef4444">
+        <div class="label">Non-Compliant</div>
+        <div class="value" id="cnt-nc">—</div>
+        <div class="sub">facilities at risk</div>
+    </div>
+    <div class="stat-card" style="--accent:#f59e0b">
+        <div class="label">Under Watch</div>
+        <div class="value" id="cnt-w">—</div>
+        <div class="sub">monitoring needed</div>
+    </div>
+    <div class="stat-card" style="--accent:#22c55e">
+        <div class="label">Compliant</div>
+        <div class="value" id="cnt-c">—</div>
+        <div class="sub">within normal range</div>
+    </div>
+    <div class="stat-card" style="--accent:#f97316">
+        <div class="label">Total Facilities</div>
+        <div class="value" id="cnt-total">—</div>
+        <div class="sub">with fire history</div>
+    </div>
+    <div class="stat-card" style="--accent:#a78bfa">
+        <div class="label">Highest Risk Score</div>
+        <div class="value" id="max-risk">—</div>
+        <div class="sub">out of 100</div>
+    </div>
+    <div class="stat-card" style="--accent:#38bdf8">
+        <div class="label">Total Fire Events</div>
+        <div class="value" id="total-fires">—</div>
+        <div class="sub">historical detections</div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="charts-row">
+    <div class="chart-card">
+        <h3>📊 Compliance Distribution</h3>
+        <canvas id="compliance-chart"></canvas>
+    </div>
+    <div class="chart-card">
+        <h3>🔥 Top 10 Facilities by Fire Count</h3>
+        <canvas id="fire-count-chart"></canvas>
+    </div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+    <h2>All Facilities</h2>
+    <input class="search-input" id="search" type="text" placeholder="🔍 Search facility name or region...">
+    <button class="filter-btn" id="btn-all" onclick="setFilter('all')">All</button>
+    <button class="filter-btn" id="btn-NC"  onclick="setFilter('NON_COMPLIANT')">⛔ Non-Compliant</button>
+    <button class="filter-btn" id="btn-W"   onclick="setFilter('WATCH')">⚠️ Watch</button>
+    <button class="filter-btn" id="btn-C"   onclick="setFilter('COMPLIANT')">✅ Compliant</button>
+</div>
+<div id="row-count"></div>
+
+<!-- Table -->
+<div class="table-wrap">
+    <div class="loading" id="loading">⏳ Loading compliance data...</div>
+    <table id="table" style="display:none">
+        <thead>
+            <tr>
+                <th onclick="sortBy('name')">Facility ▾</th>
+                <th onclick="sortBy('type')">Type</th>
+                <th onclick="sortBy('region')">Region</th>
+                <th onclick="sortBy('fire_count')">Fire Events ▾</th>
+                <th onclick="sortBy('avg_frp')">Avg FRP</th>
+                <th onclick="sortBy('max_frp')">Max FRP</th>
+                <th onclick="sortBy('active_days')">Active Days</th>
+                <th onclick="sortBy('last_detected')">Last Detected</th>
+                <th onclick="sortBy('risk_score')">Risk Score ▾</th>
+                <th onclick="sortBy('compliance')">Compliance</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+    </table>
+</div>
+
+<script>
+let allData = [];
+let currentFilter = 'all';
+let sortKey = 'risk_score';
+let sortAsc  = false;
+let complianceChart = null, fireChart = null;
+
+fetch('/api/facilities')
+    .then(r => r.json())
+    .then(data => {
+        allData = data;
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('table').style.display   = 'table';
+        renderSummary(data);
+        renderCharts(data);
+        renderTable(data);
+    })
+    .catch(e => {
+        document.getElementById('loading').textContent = '❌ Failed to load data: ' + e.message;
+    });
+
+document.getElementById('search').addEventListener('input', () => renderTable(filtered()));
+
+function filtered() {
+    const q = document.getElementById('search').value.trim().toLowerCase();
+    return allData.filter(r => {
+        const matchFilter = currentFilter === 'all' || r.compliance === currentFilter;
+        const matchSearch = !q || r.name.toLowerCase().includes(q) || (r.region||'').toLowerCase().includes(q) || (r.type||'').toLowerCase().includes(q);
+        return matchFilter && matchSearch;
+    });
+}
+
+function setFilter(f) {
+    currentFilter = f;
+    ['all','NC','W','C'].forEach(k => {
+        const el = document.getElementById('btn-' + k);
+        if (el) el.className = 'filter-btn';
+    });
+    const key = f === 'NON_COMPLIANT' ? 'NC' : f === 'WATCH' ? 'W' : f === 'COMPLIANT' ? 'C' : 'all';
+    const btn = document.getElementById('btn-' + key);
+    if (btn) btn.className = 'filter-btn active-' + key.toLowerCase();
+    renderTable(filtered());
+}
+
+function sortBy(key) {
+    if (sortKey === key) sortAsc = !sortAsc;
+    else { sortKey = key; sortAsc = false; }
+    renderTable(filtered());
+}
+
+function renderSummary(data) {
+    const nc = data.filter(r => r.compliance === 'NON_COMPLIANT').length;
+    const w  = data.filter(r => r.compliance === 'WATCH').length;
+    const c  = data.filter(r => r.compliance === 'COMPLIANT').length;
+    document.getElementById('cnt-nc').textContent    = nc;
+    document.getElementById('cnt-w').textContent     = w;
+    document.getElementById('cnt-c').textContent     = c;
+    document.getElementById('cnt-total').textContent = data.length;
+    document.getElementById('max-risk').textContent  = Math.max(...data.map(r => +r.risk_score || 0)).toFixed(1);
+    document.getElementById('total-fires').textContent = data.reduce((s,r) => s + (+r.fire_count||0), 0).toLocaleString();
+}
+
+function renderCharts(data) {
+    // Compliance pie
+    const pieCtx = document.getElementById('compliance-chart').getContext('2d');
+    const nc = data.filter(r => r.compliance === 'NON_COMPLIANT').length;
+    const w  = data.filter(r => r.compliance === 'WATCH').length;
+    const c  = data.filter(r => r.compliance === 'COMPLIANT').length;
+    complianceChart = new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Non-Compliant', 'Under Watch', 'Compliant'],
+            datasets: [{ data: [nc, w, c], backgroundColor: ['#b91c1c','#d97706','#16a34a'], borderWidth: 2, borderColor: '#0a0f1a' }]
+        },
+        options: { responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: '#94a3b8', font: { size: 11 } } } } }
+    });
+
+    // Top 10 bar
+    const top10 = [...data].sort((a,b) => (b.fire_count||0) - (a.fire_count||0)).slice(0,10);
+    const barCtx = document.getElementById('fire-count-chart').getContext('2d');
+    fireChart = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+            labels: top10.map(r => r.name.length > 22 ? r.name.slice(0,22)+'…' : r.name),
+            datasets: [{ label: 'Fire Events', data: top10.map(r => r.fire_count),
+                backgroundColor: 'rgba(249,115,22,0.7)', borderRadius: 4 }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } }
+            }
+        }
+    });
+}
+
+function renderTable(data) {
+    const sorted = [...data].sort((a,b) => {
+        let av = a[sortKey], bv = b[sortKey];
+        if (typeof av === 'string') av = av.toLowerCase(), bv = (bv||'').toLowerCase();
+        else av = +av || 0, bv = +bv || 0;
+        return sortAsc ? (av > bv ? 1 : -1) : (bv > av ? 1 : -1);
+    });
+
+    const maxFire = Math.max(...data.map(r => r.fire_count || 0), 1);
+    const tbody   = document.getElementById('tbody');
+    document.getElementById('row-count').textContent = `Showing ${sorted.length} of ${allData.length} facilities`;
+
+    tbody.innerHTML = sorted.map(r => {
+        const compBadge = r.compliance === 'NON_COMPLIANT'
+            ? `<span class="badge badge-NC">⛔ NON-COMPLIANT</span>`
+            : r.compliance === 'WATCH'
+            ? `<span class="badge badge-W">⚠️ WATCH</span>`
+            : `<span class="badge badge-C">✅ COMPLIANT</span>`;
+
+        const riskPill = `<span class="risk-pill risk-${r.risk_level||'LOW'}">${(+r.risk_score||0).toFixed(1)}</span>`;
+
+        const barW  = Math.round(((r.fire_count||0) / maxFire) * 80);
+        const frpBar = `<div class="frp-bar">
+            <div class="frp-bar-inner" style="width:${barW}px"></div>
+            <span>${r.fire_count}</span>
+        </div>`;
+
+        const daysAgo = r.last_detected
+            ? Math.floor((Date.now() - new Date(r.last_detected)) / 86400000)
+            : '?';
+        const daysBadge = `<span class="days-badge">${r.last_detected || '—'}</span>`;
+
+        return `<tr>
+            <td><a class="facility-link" href="/facility/${r.facility_osm_id}">${r.name}</a></td>
+            <td style="color:#64748b">${r.type || '—'}</td>
+            <td style="color:#64748b">${r.region || '—'}</td>
+            <td>${frpBar}</td>
+            <td>${(+r.avg_frp||0).toFixed(1)} MW</td>
+            <td style="color:#f87171;font-weight:600">${(+r.max_frp||0).toFixed(1)} MW</td>
+            <td style="color:#94a3b8">${r.active_days || 0} days</td>
+            <td>${daysBadge}</td>
+            <td>${riskPill}</td>
+            <td>${compBadge}</td>
+            <td>
+                <a href="/facility/${r.facility_osm_id}" style="color:#60a5fa;font-size:12px;text-decoration:none">📊 Details</a>
+            </td>
+        </tr>`;
+    }).join('');
+}
+</script>
+</body>
+</html>

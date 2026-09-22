@@ -9,7 +9,7 @@ from io import StringIO
 load_dotenv()
 API_KEY = os.getenv("FIRMS_API_KEY")
 
-BBOX = "68,6,97,37"
+BBOX = "76.2,8.0,80.4,13.6"
 SOURCE = "VIIRS_SNPP_NRT"
 CHUNK_DAYS = 5
 TOTAL_DAYS = 60

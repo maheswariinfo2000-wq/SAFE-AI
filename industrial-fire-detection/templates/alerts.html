@@ -3,6 +3,9 @@
 <head>
     <title>Anomaly Alerts</title>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f97316" />
+    <link rel="manifest" href="/manifest.json" />
 
     <style>
 
@@ -213,6 +216,88 @@
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
+        }
+
+        /* WhatsApp button */
+        #send-whatsapp-btn {
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 20px;
+            margin-left: 10px;
+            box-shadow: 0 7px 18px rgba(37,211,102,.22);
+            transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+        }
+        #send-whatsapp-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(37,211,102,.35);
+            filter: brightness(1.07);
+        }
+        #send-whatsapp-btn:active { transform: translateY(1px) scale(.98); }
+        #send-whatsapp-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        #whatsapp-status {
+            color: #25D366;
+            font-size: 13px;
+            display: none;
+            margin-bottom: 16px;
+        }
+
+        /* Push Notification buttons */
+        #send-push-btn {
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 20px;
+            margin-left: 10px;
+            box-shadow: 0 7px 18px rgba(249,115,22,.25);
+            transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+        }
+        #send-push-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(249,115,22,.38);
+            filter: brightness(1.07);
+        }
+        #send-push-btn:active { transform: translateY(1px) scale(.98); }
+        #send-push-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        #subscribe-push-btn {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 20px;
+            margin-left: 10px;
+            box-shadow: 0 7px 18px rgba(59,130,246,.25);
+            transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+        }
+        #subscribe-push-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(59,130,246,.38);
+            filter: brightness(1.07);
+        }
+        #subscribe-push-btn:active { transform: translateY(1px) scale(.98); }
+        #subscribe-push-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        #push-status {
+            color: #f97316;
+            font-size: 13px;
+            display: none;
+            margin-bottom: 16px;
         }
 
 
@@ -758,16 +843,14 @@
          EXISTING SEND BUTTON
          ========================================================= -->
 
-    <button
-        id="send-alert-btn"
-    >
-        📧 Send Email Alert to Authorities
-    </button>
+    <button id="send-alert-btn">📧 Send Email Alert to Authorities</button>
+    <button id="send-whatsapp-btn">📱 WhatsApp Alert</button>
+    <button id="send-push-btn">🔔 Broadcast Push Alert</button>
+    <button id="subscribe-push-btn">📲 Enable Push on Device</button>
 
-
-    <p
-        id="send-status"
-    ></p>
+    <p id="send-status"></p>
+    <p id="whatsapp-status"></p>
+    <p id="push-status"></p>
 
 
     <!-- =========================================================
@@ -984,6 +1067,178 @@
                 }
             );
 
+        /* =========================================================
+           FEATURE 5: WhatsApp Alert
+           ========================================================= */
+        document.getElementById('send-whatsapp-btn').addEventListener('click', () => {
+            const btn    = document.getElementById('send-whatsapp-btn');
+            const status = document.getElementById('whatsapp-status');
+            btn.textContent = 'Sending...';
+            btn.disabled = true;
+            fetch('/api/send-whatsapp', { method: 'POST' })
+                .then(r => r.json())
+                .then(d => {
+                    btn.textContent = '📱 WhatsApp Alert';
+                    btn.disabled = false;
+                    status.style.display = 'block';
+                    if (d.status === 'sent') {
+                        status.style.color = '#25D366';
+                        status.textContent = `✅ WhatsApp sent! SID: ${d.sid} (${d.anomaly_count} anomalies)`;
+                    } else if (d.status === 'not_configured') {
+                        status.style.color = '#f59e0b';
+                        status.textContent = '⚙️ ' + d.message;
+                    } else if (d.status === 'no_anomalies') {
+                        status.style.color = '#4caf50';
+                        status.textContent = '✅ ' + d.message;
+                    } else {
+                        status.style.color = '#ef4444';
+                        status.textContent = '❌ ' + (d.message || d.error || 'Unknown error');
+                    }
+                })
+                .catch(e => {
+                    btn.textContent = '📱 WhatsApp Alert';
+                    btn.disabled = false;
+                    status.style.display = 'block';
+                    status.style.color = '#ef4444';
+                    status.textContent = '❌ Request failed: ' + e.message;
+                });
+        });
+
+        /* =========================================================
+           FEATURE 8: Progressive Web App & Web Push Notifications
+           ========================================================= */
+        function urlB64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+
+        let swReg = null;
+        const pushBtn = document.getElementById('send-push-btn');
+        const subBtn = document.getElementById('subscribe-push-btn');
+        const pushStatus = document.getElementById('push-status');
+
+        function updatePushUI(isSubscribed) {
+            if (isSubscribed) {
+                subBtn.textContent = '🔔 Push Enabled (Click to Disable)';
+                subBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+            } else {
+                subBtn.textContent = '📲 Enable Push on Device';
+                subBtn.style.background = 'linear-gradient(135deg, #3b82f6, #1d4ed8)';
+            }
+        }
+
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => {
+                    swReg = reg;
+                    return reg.pushManager.getSubscription();
+                })
+                .then(sub => {
+                    updatePushUI(!!sub);
+                })
+                .catch(err => {
+                    console.warn('[PWA] Service Worker registration failed:', err);
+                });
+        } else {
+            if (subBtn) subBtn.style.display = 'none';
+        }
+
+        // Toggle Push Subscription
+        if (subBtn) {
+            subBtn.addEventListener('click', async () => {
+                if (!swReg) {
+                    alert('Push notifications not supported by this browser.');
+                    return;
+                }
+                subBtn.disabled = true;
+                pushStatus.style.display = 'block';
+                pushStatus.style.color = '#3b82f6';
+                pushStatus.textContent = '⏳ Configuring push notification permissions...';
+
+                try {
+                    const currentSub = await swReg.pushManager.getSubscription();
+                    if (currentSub) {
+                        // Unsubscribe
+                        await currentSub.unsubscribe();
+                        await fetch('/api/push/unsubscribe', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ endpoint: currentSub.endpoint })
+                        });
+                        updatePushUI(false);
+                        pushStatus.style.color = '#f59e0b';
+                        pushStatus.textContent = '🔕 Push notifications disabled for this device.';
+                    } else {
+                        // Subscribe
+                        const keyRes = await fetch('/api/push/vapid-public-key');
+                        const keyData = await keyRes.json();
+                        if (!keyData.publicKey) throw new Error('VAPID public key unavailable');
+
+                        const convertedKey = urlB64ToUint8Array(keyData.publicKey);
+                        const newSub = await swReg.pushManager.subscribe({
+                            userVisibleOnly: true,
+                            applicationServerKey: convertedKey
+                        });
+
+                        await fetch('/api/push/subscribe', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(newSub)
+                        });
+
+                        updatePushUI(true);
+                        pushStatus.style.color = '#10b981';
+                        pushStatus.textContent = '✅ Push notifications enabled! You will receive instant alerts on this device.';
+                    }
+                } catch (err) {
+                    console.error('Push toggle error:', err);
+                    pushStatus.style.color = '#ef4444';
+                    pushStatus.textContent = '❌ Push subscription error: ' + err.message;
+                } finally {
+                    subBtn.disabled = false;
+                }
+            });
+        }
+
+        // Broadcast Push Alert Button
+        if (pushBtn) {
+            pushBtn.addEventListener('click', () => {
+                pushBtn.textContent = 'Sending Push...';
+                pushBtn.disabled = true;
+                pushStatus.style.display = 'block';
+                pushStatus.style.color = '#f97316';
+                pushStatus.textContent = '🚀 Broadcasting push alert to all subscribed devices...';
+
+                fetch('/api/send-push-alert', { method: 'POST' })
+                    .then(r => r.json())
+                    .then(d => {
+                        pushBtn.textContent = '🔔 Broadcast Push Alert';
+                        pushBtn.disabled = false;
+                        if (d.status === 'sent') {
+                            pushStatus.style.color = '#10b981';
+                            pushStatus.textContent = `✅ ${d.message}! (${d.anomaly_count} active anomalies)`;
+                        } else if (d.status === 'no_anomalies') {
+                            pushStatus.style.color = '#3b82f6';
+                            pushStatus.textContent = 'ℹ️ ' + d.message;
+                        } else {
+                            pushStatus.style.color = '#ef4444';
+                            pushStatus.textContent = '❌ ' + (d.message || d.error || 'Failed to send');
+                        }
+                    })
+                    .catch(e => {
+                        pushBtn.textContent = '🔔 Broadcast Push Alert';
+                        pushBtn.disabled = false;
+                        pushStatus.style.color = '#ef4444';
+                        pushStatus.textContent = '❌ Request failed: ' + e.message;
+                    });
+            });
+        }
     </script>
 
 

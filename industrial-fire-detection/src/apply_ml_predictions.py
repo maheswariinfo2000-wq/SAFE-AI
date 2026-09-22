@@ -1,39 +1,64 @@
 import pandas as pd
+import numpy as np
 import joblib
+import os
+import sys
+
+# Ensure project root is in sys.path so 'src' can always be resolved
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
+try:
+    from src.train_classifier import extract_features, FEATURE_COLS
+except ImportError:
+    from train_classifier import extract_features, FEATURE_COLS
 
 def apply_predictions():
     print("Loading trained model...")
-    model = joblib.load("data/processed/fire_classifier_model.pkl")
+    model_path = os.path.join(PROJECT_ROOT, "data/processed/fire_classifier_model.pkl")
+    if not os.path.exists(model_path):
+        print(f"Model file not found at {model_path}. Please train model first.")
+        return
 
-    print("Loading current hotspots...")
-    df = pd.read_csv("data/processed/hotspots_with_anomalies.csv")
+    loaded = joblib.load(model_path)
+    if isinstance(loaded, dict) and "model" in loaded:
+        model = loaded["model"]
+    else:
+        model = loaded
 
-    df["daynight_flag"] = df["daynight"].map({"D": 1, "N": 0}).fillna(1)
-    df["confidence_num"] = df["confidence"].map({"l": 0, "n": 1, "h": 2}).fillna(1)
+    targets = [
+        (os.path.join(PROJECT_ROOT, "data/processed/hotspots_with_anomalies.csv"), "Live Hotspots"),
+        (os.path.join(PROJECT_ROOT, "data/processed/all_tamilnadu_hotspots.csv"), "All Tamil Nadu Hotspots (Historical)")
+    ]
 
-    feature_cols = ["frp", "bright_ti4", "nearest_industrial_km", "daynight_flag", "confidence_num"]
+    for hotspot_path, label in targets:
+        if not os.path.exists(hotspot_path):
+            continue
 
-    valid_mask = df[feature_cols].notna().all(axis=1)
-    X = df.loc[valid_mask, feature_cols]
+        print(f"\nApplying calibrated ML predictions to {label} ({hotspot_path})...")
+        df = pd.read_csv(hotspot_path)
 
-    predictions = model.predict(X)
-    probabilities = model.predict_proba(X)
-    confidence_scores = probabilities.max(axis=1)  # highest class probability
+        X = extract_features(df)
+        predictions = model.predict(X)
+        probabilities = model.predict_proba(X)
+        confidence_scores = probabilities.max(axis=1)
 
-    df.loc[valid_mask, "ml_prediction"] = predictions
-    df.loc[valid_mask, "ml_confidence"] = confidence_scores
+        df["ml_prediction"] = predictions
+        df["ml_confidence"] = np.round(confidence_scores, 3)
 
-    df["ml_prediction"] = df["ml_prediction"].fillna("N/A")
-    df["ml_confidence"] = df["ml_confidence"].fillna(0)
+        if "final_class" in df.columns:
+            valid_mask = df["final_class"].notna() & (df["final_class"] != "unclassified")
+            agrees = (df.loc[valid_mask, "ml_prediction"] == df.loc[valid_mask, "final_class"]).sum()
+            total_valid = valid_mask.sum()
+            pct = (agrees / total_valid * 100) if total_valid > 0 else 0
+            print(f"ML agrees with rule-based classification: {agrees}/{total_valid} ({pct:.2f}%)")
 
-    df["ml_agrees_with_rules"] = df["ml_prediction"] == df["final_class"]
+        print(f"Average ML calibrated confidence: {df['ml_confidence'].mean():.3f}")
+        df.to_csv(hotspot_path, index=False)
+        print(f"Saved updated predictions to {hotspot_path}")
 
-    output_path = "data/processed/hotspots_with_anomalies.csv"
-    df.to_csv(output_path, index=False)
-
-    print(f"\nSaved ML predictions to: {output_path}")
-    print(f"\nML agrees with rule-based classification: {df['ml_agrees_with_rules'].sum()}/{len(df)} ({df['ml_agrees_with_rules'].mean()*100:.1f}%)")
-    print(f"\nAverage ML confidence: {df['ml_confidence'].mean():.3f}")
+    return model
 
 if __name__ == "__main__":
     apply_predictions()

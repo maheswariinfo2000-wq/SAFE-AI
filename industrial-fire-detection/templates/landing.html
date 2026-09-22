@@ -554,10 +554,10 @@
         <div class="hero-text">
             <h1>🔥 Industrial Fire & Thermal Source Detection</h1>
             <p>
-                AI-powered classification of satellite thermal hotspots —
-                separating industrial fires, gas flares, wildfires, and
-                agricultural burns using NASA FIRMS, OpenStreetMap, and
-                geospatial fusion.
+                AI-powered classification of satellite thermal hotspots across
+                Tamil Nadu — separating industrial fires, gas flares, wildfires,
+                and agricultural burns using NASA FIRMS, OpenStreetMap, and
+                SIPCOT-verified industrial data.
             </p>
         </div>
 
@@ -568,7 +568,7 @@
 
         <div>
             <div id="globe-wrap"></div>
-            <div class="globe-caption">Live thermal hotspots over India — rotating preview</div>
+            <div class="globe-caption">Live thermal hotspots over Tamil Nadu — rotating preview</div>
         </div>
 
 
@@ -631,13 +631,18 @@
     <div class="stats">
 
         <div class="stat">
-            <h2>1,258</h2>
-            <p>Thermal hotspots analyzed</p>
+            <h2>1,597</h2>
+            <p>Thermal hotspots analyzed (60 days)</p>
         </div>
 
         <div class="stat">
-            <h2>26,805</h2>
-            <p>Industrial zones mapped</p>
+            <h2>1,960</h2>
+            <p>Industrial zones mapped (Tamil Nadu)</p>
+        </div>
+
+        <div class="stat">
+            <h2>174</h2>
+            <p>SIPCOT-verified facilities</p>
         </div>
 
         <div class="stat">
@@ -756,16 +761,14 @@
         }
 
         const hotspots = [
-            { lat: 22.3, lon: 70.8, anomaly: true },
-            { lat: 22.8, lon: 86.2, anomaly: true },
-            { lat: 20.9, lon: 77.7, anomaly: false },
-            { lat: 15.3, lon: 76.9, anomaly: true },
-            { lat: 17.4, lon: 78.5, anomaly: false },
-            { lat: 26.9, lon: 75.8, anomaly: false },
-            { lat: 28.6, lon: 77.2, anomaly: false },
-            { lat: 13.0, lon: 80.3, anomaly: false },
-            { lat: 19.1, lon: 73.0, anomaly: true },
-            { lat: 12.9, lon: 77.6, anomaly: false }
+            { lat: 13.05, lon: 80.24, anomaly: false },
+            { lat: 12.92, lon: 79.34, anomaly: true },
+            { lat: 11.75, lon: 79.77, anomaly: false },
+            { lat: 11.27, lon: 77.58, anomaly: false },
+            { lat: 10.38, lon: 78.82, anomaly: true },
+            { lat: 9.79, lon: 80.15, anomaly: false },
+            { lat: 9.70, lon: 78.48, anomaly: false },
+            { lat: 8.76, lon: 78.13, anomaly: true }
         ];
 
         const markerGroup = new THREE.Group();

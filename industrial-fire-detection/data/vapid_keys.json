@@ -1,0 +1,5 @@
+{
+  "public_key": "BA06yQ_D6QSbQ7iNi2XhxJ0r2XIw3JmDymiMLPq648tfGPqGbX8NxF2kHb5GmxeeHNWyJs-acI-FA31OKFgv_20",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgQjFstFDtJFvmZJyg\n7W+l+eZRbNhASDL5WaFWPBhS61uhRANCAAQNOskPw+kEm0O4jYtl4cSdK9lyMNyZ\ng8pojCz6uuPLXxj6hm1/DcRdpB2+RpsXnhzVsibPmnCPhQN9TihYL/9t\n-----END PRIVATE KEY-----\n",
+  "claims_sub": "mailto:admin@firealert.local"
+}

@@ -1,6 +1,12 @@
 requests
 pandas
+numpy
 python-dotenv
 geopandas
+shapely
 scikit-learn
+joblib
 flask
+folium
+apscheduler
+pywebpush
